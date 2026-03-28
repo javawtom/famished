@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
+import ProfilePage from '../pages/ProfilePage'
 
 const navItems = [
   { path: '/',         icon: 'bolt',            label: 'Fuel'     },
@@ -13,6 +14,7 @@ export default function AppShell() {
   const location = useLocation()
   const navigate = useNavigate()
   const [menuOpen, setMenuOpen] = useState(false)
+  const [profileOpen, setProfileOpen] = useState(false)
   const navRef = useRef(null)
   const [indicatorStyle, setIndicatorStyle] = useState({ left: 0, width: 0 })
 
@@ -67,12 +69,16 @@ export default function AppShell() {
           >menu</span>
           <h1 style={{ fontSize: '18px', fontWeight: 700, letterSpacing: '-0.02em', color: '#4f645b', margin: 0 }}>Fuel Now</h1>
         </div>
-        <div style={{
-          height: '40px', width: '40px', borderRadius: '50%',
-          background: '#d1e8dd', border: '2px solid #d1e8dd',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          color: '#4f645b', fontWeight: 700, fontSize: '14px',
-        }}>
+        <div
+          onClick={() => setProfileOpen(true)}
+          style={{
+            height: '40px', width: '40px', borderRadius: '50%',
+            background: '#d1e8dd', border: '2px solid #d1e8dd',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            color: '#4f645b', fontWeight: 700, fontSize: '14px',
+            cursor: 'pointer', transition: 'transform 0.2s ease',
+          }}
+        >
           J
         </div>
       </header>
@@ -144,6 +150,9 @@ export default function AppShell() {
         </>
       )}
 
+      {/* ===== PROFILE PANEL ===== */}
+      {profileOpen && <ProfilePage onClose={() => setProfileOpen(false)} />}
+
       {/* ===== MAIN CONTENT ===== */}
       <main style={{ paddingTop: '88px', paddingBottom: '120px', paddingLeft: '24px', paddingRight: '24px', maxWidth: '672px', margin: '0 auto' }}>
         <Outlet />
@@ -211,6 +220,18 @@ export default function AppShell() {
           )
         })}
       </nav>
+
+      {/* Keyframe animations */}
+      <style>{`
+        @keyframes slideIn {
+          from { transform: translateX(-100%); }
+          to { transform: translateX(0); }
+        }
+        @keyframes slideInRight {
+          from { transform: translateX(100%); }
+          to { transform: translateX(0); }
+        }
+      `}</style>
     </div>
   )
 }
