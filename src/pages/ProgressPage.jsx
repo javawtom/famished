@@ -199,7 +199,7 @@ export default function ProgressPage() {
           <div>
             <p style={{ color: '#5f5f5c', fontSize: '14px', fontWeight: 500, margin: '0 0 4px' }}>Current Weight</p>
             <h3 style={{ fontSize: '32px', fontWeight: 700, color: '#2f332f', margin: 0 }}>
-              {currentWeight} <span style={{ fontSize: '18px', fontWeight: 400, color: '#535351' }}>lbs</span>
+              {Number(currentWeight).toFixed(1)} <span style={{ fontSize: '18px', fontWeight: 400, color: '#535351' }}>lbs</span>
             </h3>
           </div>
           <div style={{ textAlign: 'right' }}>
@@ -243,7 +243,7 @@ export default function ProgressPage() {
                 {/* Show weight label on latest point */}
                 {i === points.length - 1 && (
                   <text x={p.x} y={p.y - 14} textAnchor="middle"
-                    fill="#4f645b" fontSize="12" fontWeight="700" fontFamily="Manrope">{p.weight}</text>
+                    fill="#4f645b" fontSize="12" fontWeight="700" fontFamily="Manrope">{Number(p.weight).toFixed(1)}</text>
                 )}
               </g>
             ))}
@@ -290,6 +290,7 @@ export default function ProgressPage() {
               <div style={{ display: 'flex', gap: '12px' }}>
                 <input
                   type="number"
+                  step="0.1"
                   value={weightInput}
                   onChange={(e) => setWeightInput(e.target.value)}
                   placeholder="Enter weight..."
@@ -328,7 +329,7 @@ export default function ProgressPage() {
         <div style={{ background: '#f3f4ef', padding: '24px', borderRadius: '2rem' }}>
           <span className="material-symbols-outlined" style={{ color: '#4f645b', fontSize: '28px', display: 'block', marginBottom: '16px' }}>trending_up</span>
           <p style={{ fontSize: '24px', fontWeight: 700, color: '#2f332f', margin: '0 0 4px' }}>
-            +{totalGained.toFixed(1)} <span style={{ fontSize: '14px', fontWeight: 500 }}>lbs</span>
+            {totalGained >= 0 ? '+' : ''}{totalGained.toFixed(1)} <span style={{ fontSize: '14px', fontWeight: 500 }}>lbs</span>
           </p>
           <p style={{ fontSize: '10px', fontWeight: 700, color: '#5f5f5c', textTransform: 'uppercase', letterSpacing: '0.12em', margin: 0 }}>Total Gained</p>
         </div>

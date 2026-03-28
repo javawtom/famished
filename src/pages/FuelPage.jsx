@@ -3,202 +3,273 @@ import { useApp } from '../context/AppContext'
 import { getCurrentMealPeriod, formatTime } from '../data/schedule'
 import { getHealthyMeals, getQuickMeals } from '../data/meals'
 
-const encouragements = [
-  'Stay Gentle',
-  'You Are Enough',
-  'One Bite at a Time',
-  'Small Steps Matter',
-  'Be Kind to Yourself',
-]
-
-function getEncouragement() {
-  const day = new Date().getDay()
-  return encouragements[day % encouragements.length]
-}
-
 export default function FuelPage() {
   const { currentWeight, targetWeight, markEaten, unmarkEaten, isMealEaten } = useApp()
   const mealPeriod = getCurrentMealPeriod()
-  const encouragement = getEncouragement()
 
-  const healthyOption = useMemo(() => {
-    const type = mealPeriod.mealType === 'snack' ? 'lunch' : mealPeriod.mealType
-    const meals = getHealthyMeals(type)
-    const dayIndex = new Date().getDay()
-    return meals[dayIndex % meals.length]
-  }, [mealPeriod.mealType])
+  // Get all healthy and quick meals for current meal type
+  const mealType = mealPeriod.mealType === 'snack' || mealPeriod.mealType === 'latenight'
+    ? 'dinner' : mealPeriod.mealType
+  const healthyPool = useMemo(() => getHealthyMeals(mealType), [mealType])
+  const quickPool = useMemo(() => getQuickMeals(mealType), [mealType])
 
-  const quickOption = useMemo(() => {
-    const type = mealPeriod.mealType === 'snack' ? 'lunch' : mealPeriod.mealType
-    const meals = getQuickMeals(type)
-    const dayIndex = new Date().getDay()
-    return meals[dayIndex % meals.length]
-  }, [mealPeriod.mealType])
+  // Flashcard index for cycling
+  const [healthyIndex, setHealthyIndex] = useState(() => {
+    return new Date().getDay() % Math.max(1, healthyPool.length)
+  })
+  const [quickIndex, setQuickIndex] = useState(() => {
+    return new Date().getDay() % Math.max(1, quickPool.length)
+  })
+
+  const healthyOption = healthyPool[healthyIndex % healthyPool.length]
+  const quickOption = quickPool[quickIndex % quickPool.length]
 
   const eaten = isMealEaten(mealPeriod.mealType)
   const [justAte, setJustAte] = useState(false)
-  const progressPercent = Math.min(100, Math.round(((currentWeight - 145) / (targetWeight - 145)) * 100))
-  const [expandedMeal, setExpandedMeal] = useState(null)
+  const [expandedMeal, setExpandedMeal] = useState(null) // 'healthy' | 'quick' | null
+  const [chosenMeal, setChosenMeal] = useState(null) // which side was tapped
 
-  const handleEaten = () => {
+  const handleChoose = (side) => {
     if (eaten) {
       unmarkEaten(mealPeriod.mealType)
+      setChosenMeal(null)
     } else {
       markEaten(mealPeriod.mealType)
+      setChosenMeal(side)
       setJustAte(true)
       setTimeout(() => setJustAte(false), 2000)
     }
   }
 
+  const cycleHealthy = (e) => {
+    e.stopPropagation()
+    setHealthyIndex(i => (i + 1) % healthyPool.length)
+    setExpandedMeal(null)
+  }
+
+  const cycleQuick = (e) => {
+    e.stopPropagation()
+    setQuickIndex(i => (i + 1) % quickPool.length)
+    setExpandedMeal(null)
+  }
+
+  // Friendly meal period label
+  const mealLabel = mealPeriod.mealType === 'latenight' ? 'a late-night snack'
+    : mealPeriod.mealType === 'snack' ? 'a snack'
+    : mealPeriod.label.toLowerCase()
+
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '48px' }}>
-      {/* ===== WELCOME ===== */}
-      <section>
-        <h2 style={{ fontSize: '36px', fontWeight: 800, letterSpacing: '-0.02em', color: '#2f332f', margin: 0 }}>{encouragement}</h2>
-        <p style={{ color: '#5f5f5c', fontSize: '18px', lineHeight: 1.6, marginTop: '8px' }}>
-          You are doing enough. Let's find something simple to nourish you today.
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
+      {/* ===== DECISION HEADLINE ===== */}
+      <section style={{ textAlign: 'center' }}>
+        <h2 style={{
+          fontSize: '34px', fontWeight: 800, letterSpacing: '-0.02em',
+          color: '#2f332f', margin: '0 0 8px',
+        }}>Do you want to eat?</h2>
+        <p style={{ color: '#5f5f5c', fontSize: '17px', lineHeight: 1.6 }}>
+          It's time for {mealLabel}. Choose what feels right.
         </p>
       </section>
 
-      {/* ===== CURRENT MEAL SPOTLIGHT ===== */}
-      <section style={{
-        background: '#ffffff', borderRadius: '2rem', padding: '32px',
-        boxShadow: '0 12px 32px rgba(47, 51, 47, 0.08)',
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
-          <span className="material-symbols-outlined" style={{ color: '#4f645b', fontVariationSettings: "'FILL' 1" }}>{mealPeriod.icon}</span>
-          <span style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.12em', color: '#5f5f5c' }}>Current Meal</span>
-        </div>
-        <h3 style={{ fontSize: '30px', fontWeight: 700, color: '#4f645b', margin: '0 0 4px' }}>{mealPeriod.label}</h3>
-        <p style={{ color: '#535351', fontSize: '15px', fontWeight: 500 }}>
-          {formatTime(mealPeriod.time)} • {mealPeriod.mealType === 'snack' ? 'Quick Energy' : 'Energy Focus'}
-        </p>
-
-        <div style={{ marginTop: '32px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          {/* Healthy Option */}
-          {healthyOption && (
-            <div
-              onClick={() => setExpandedMeal(expandedMeal === healthyOption.id ? null : healthyOption.id)}
-              style={{
-                padding: '24px', borderRadius: '16px', background: '#f3f4ef',
-                cursor: 'pointer', transition: 'all 0.3s ease',
-              }}
-            >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                <div>
-                  <span style={{ color: '#4f645b', fontWeight: 700, fontSize: '13px', display: 'block', marginBottom: '4px' }}>Option 1: Healthy</span>
-                  <h4 style={{ fontSize: '20px', fontWeight: 700, color: '#2f332f', margin: '0 0 4px' }}>{healthyOption.name}</h4>
-                  <p style={{ color: '#5f5f5c', fontSize: '14px', margin: 0 }}>{healthyOption.description}</p>
-                </div>
-                <span className="material-symbols-outlined" style={{ color: '#43574f', opacity: 0.4, fontSize: '20px' }}>
-                  {expandedMeal === healthyOption.id ? 'expand_less' : 'arrow_forward_ios'}
-                </span>
-              </div>
-              {expandedMeal === healthyOption.id && (
-                <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid rgba(175,179,173,0.2)', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                  {healthyOption.steps.map((step, i) => (
-                    <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
-                      <span className="material-symbols-outlined" style={{ color: '#4f645b', fontSize: '16px', marginTop: '2px', fontVariationSettings: "'FILL' 1" }}>check_circle</span>
-                      <p style={{ color: '#5c605b', fontSize: '14px', margin: 0, lineHeight: 1.5 }}>{step}</p>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Quick Option */}
-          {quickOption && (
-            <div
-              onClick={() => setExpandedMeal(expandedMeal === quickOption.id ? null : quickOption.id)}
-              style={{
-                padding: '24px', borderRadius: '16px', background: '#f3f4ef',
-                cursor: 'pointer', transition: 'all 0.3s ease',
-              }}
-            >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                <div>
-                  <span style={{ color: '#695d52', fontWeight: 700, fontSize: '13px', display: 'block', marginBottom: '4px' }}>Option 2: Quick</span>
-                  <h4 style={{ fontSize: '20px', fontWeight: 700, color: '#2f332f', margin: '0 0 4px' }}>{quickOption.name}</h4>
-                  <p style={{ color: '#5f5f5c', fontSize: '14px', margin: 0 }}>{quickOption.description}</p>
-                </div>
-                <span className="material-symbols-outlined" style={{ color: '#43574f', opacity: 0.4, fontSize: '20px' }}>
-                  {expandedMeal === quickOption.id ? 'expand_less' : 'arrow_forward_ios'}
-                </span>
-              </div>
-              {expandedMeal === quickOption.id && (
-                <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid rgba(175,179,173,0.2)', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                  {quickOption.steps.map((step, i) => (
-                    <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
-                      <span className="material-symbols-outlined" style={{ color: '#4f645b', fontSize: '16px', marginTop: '2px', fontVariationSettings: "'FILL' 1" }}>check_circle</span>
-                      <p style={{ color: '#5c605b', fontSize: '14px', margin: 0, lineHeight: 1.5 }}>{step}</p>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-
-        {/* I've Eaten Button */}
-        <div style={{ marginTop: '40px' }}>
-          <button
-            onClick={handleEaten}
-            disabled={justAte}
+      {/* ===== FLASHCARD GRID ===== */}
+      <section style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+        {/* Option 1: Healthy */}
+        {healthyOption && (
+          <div
+            onClick={() => setExpandedMeal(expandedMeal === 'healthy' ? null : 'healthy')}
             style={{
-              width: '100%', padding: '20px', borderRadius: '9999px', border: 'none',
-              fontFamily: "'Manrope', sans-serif", fontWeight: 700, fontSize: '18px',
-              cursor: justAte ? 'default' : 'pointer',
-              background: eaten || justAte
-                ? '#d1e8dd'
-                : 'linear-gradient(to right, #4f645b, #43574f)',
-              color: eaten || justAte ? '#42564e' : '#e7fef3',
-              boxShadow: eaten ? 'none' : '0 12px 32px rgba(47, 51, 47, 0.08)',
-              transition: 'all 0.3s ease',
+              display: 'flex', flexDirection: 'column', textAlign: 'left',
+              background: '#ffffff', borderRadius: '2rem', padding: '16px',
+              boxShadow: '0 12px 32px rgba(47, 51, 47, 0.08)',
+              cursor: 'pointer', transition: 'all 0.3s ease',
+              transform: expandedMeal === 'healthy' ? 'scale(1.02)' : 'scale(1)',
+              outline: chosenMeal === 'healthy' ? '3px solid #4f645b' : 'none',
             }}
           >
-            {eaten ? '✕ Unmark meal' : justAte ? '\u2713 Logged!' : "I've Eaten"}
-          </button>
-        </div>
-      </section>
-
-      {/* ===== PROGRESS ===== */}
-      <section style={{
-        background: '#edefe9', padding: '32px', borderRadius: '2rem',
-        display: 'flex', flexDirection: 'column', gap: '24px',
-      }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
-          <div>
-            <h4 style={{ fontSize: '20px', fontWeight: 700, color: '#2f332f', margin: '0 0 4px' }}>Your Journey</h4>
-            <p style={{ color: '#5f5f5c', fontSize: '14px', margin: 0 }}>Targeting {targetWeight} lbs for health</p>
-          </div>
-          <div style={{ textAlign: 'right' }}>
-            <span style={{ fontSize: '30px', fontWeight: 800, color: '#4f645b' }}>{currentWeight}</span>
-            <span style={{ color: '#5f5f5c', fontWeight: 700, marginLeft: '4px' }}>lbs</span>
-          </div>
-        </div>
-
-        <div>
-          <div style={{ height: '16px', width: '100%', background: '#e6e9e3', borderRadius: '9999px', overflow: 'hidden' }}>
             <div style={{
-              height: '100%', background: '#c3dacf', borderRadius: '9999px',
-              width: `${Math.max(3, progressPercent)}%`,
-              transition: 'width 1s ease-out',
-            }} />
-          </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '12px', fontSize: '11px', fontWeight: 700, color: '#787c77', textTransform: 'uppercase', letterSpacing: '-0.02em' }}>
-            <span>145 lbs</span>
-            <span>175 lbs</span>
-          </div>
-        </div>
+              width: '100%', aspectRatio: '1/1', borderRadius: '1rem',
+              overflow: 'hidden', marginBottom: '14px', background: '#f3f4ef',
+            }}>
+              <img
+                src={healthyOption.image}
+                alt={healthyOption.name}
+                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                loading="lazy"
+              />
+            </div>
+            <div style={{ padding: '0 4px' }}>
+              <span style={{
+                display: 'inline-block', padding: '3px 10px', borderRadius: '9999px',
+                fontSize: '10px', fontWeight: 700, textTransform: 'uppercase',
+                letterSpacing: '0.08em', marginBottom: '6px',
+                background: 'rgba(79, 100, 91, 0.1)', color: '#4f645b',
+              }}>Healthy</span>
+              <h3 style={{
+                fontSize: '17px', fontWeight: 700, color: '#2f332f',
+                lineHeight: 1.2, margin: '0 0 4px',
+              }}>{healthyOption.name}</h3>
+              <p style={{
+                color: '#5f5f5c', fontSize: '12px', lineHeight: 1.5,
+                margin: '0 0 10px',
+              }}>{healthyOption.description}</p>
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <span style={{
+                  fontSize: '11px', fontWeight: 600, color: '#787c77',
+                }}>{healthyOption.prepTime}</span>
+              </div>
+            </div>
 
-        <div style={{ padding: '16px', background: 'rgba(209, 232, 221, 0.3)', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <span className="material-symbols-outlined" style={{ color: '#4f645b', fontVariationSettings: "'FILL' 1" }}>colors_spark</span>
-          <p style={{ color: '#42564e', fontSize: '14px', fontWeight: 500, margin: 0 }}>
-            Progress is quiet, but it's happening every day.
-          </p>
-        </div>
+            {/* Expanded Steps */}
+            {expandedMeal === 'healthy' && (
+              <div style={{
+                marginTop: '12px', paddingTop: '12px',
+                borderTop: '1px solid rgba(175,179,173,0.15)',
+              }}>
+                {healthyOption.steps.map((step, i) => (
+                  <div key={i} style={{ display: 'flex', gap: '8px', marginBottom: '8px', alignItems: 'flex-start' }}>
+                    <div style={{
+                      width: '18px', height: '18px', borderRadius: '50%', flexShrink: 0,
+                      background: '#d1e8dd', color: '#42564e',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontSize: '10px', fontWeight: 700, marginTop: '1px',
+                    }}>{i + 1}</div>
+                    <p style={{ color: '#5c605b', fontSize: '12px', margin: 0, lineHeight: 1.4 }}>{step}</p>
+                  </div>
+                ))}
+                <button
+                  onClick={(e) => { e.stopPropagation(); handleChoose('healthy') }}
+                  style={{
+                    width: '100%', marginTop: '8px', padding: '12px', borderRadius: '9999px',
+                    border: 'none', fontFamily: "'Manrope', sans-serif", fontWeight: 700,
+                    fontSize: '13px', cursor: 'pointer',
+                    background: eaten && chosenMeal === 'healthy' ? '#d1e8dd' : '#4f645b',
+                    color: eaten && chosenMeal === 'healthy' ? '#42564e' : '#e7fef3',
+                  }}
+                >
+                  {eaten && chosenMeal === 'healthy' ? '✕ Unmark' : "I'll eat this"}
+                </button>
+              </div>
+            )}
+
+            {/* Cycle Arrow */}
+            {healthyPool.length > 1 && (
+              <button onClick={cycleHealthy} style={{
+                alignSelf: 'center', marginTop: '8px', background: 'none', border: 'none',
+                cursor: 'pointer', padding: '4px',
+              }}>
+                <span className="material-symbols-outlined" style={{ fontSize: '18px', color: '#afb3ad' }}>swap_horiz</span>
+              </button>
+            )}
+          </div>
+        )}
+
+        {/* Option 2: Quick */}
+        {quickOption && (
+          <div
+            onClick={() => setExpandedMeal(expandedMeal === 'quick' ? null : 'quick')}
+            style={{
+              display: 'flex', flexDirection: 'column', textAlign: 'left',
+              background: '#ffffff', borderRadius: '2rem', padding: '16px',
+              boxShadow: '0 12px 32px rgba(47, 51, 47, 0.08)',
+              cursor: 'pointer', transition: 'all 0.3s ease',
+              transform: expandedMeal === 'quick' ? 'scale(1.02)' : 'scale(1)',
+              outline: chosenMeal === 'quick' ? '3px solid #695d52' : 'none',
+            }}
+          >
+            <div style={{
+              width: '100%', aspectRatio: '1/1', borderRadius: '1rem',
+              overflow: 'hidden', marginBottom: '14px', background: '#f3f4ef',
+            }}>
+              <img
+                src={quickOption.image}
+                alt={quickOption.name}
+                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                loading="lazy"
+              />
+            </div>
+            <div style={{ padding: '0 4px' }}>
+              <span style={{
+                display: 'inline-block', padding: '3px 10px', borderRadius: '9999px',
+                fontSize: '10px', fontWeight: 700, textTransform: 'uppercase',
+                letterSpacing: '0.08em', marginBottom: '6px',
+                background: 'rgba(105, 93, 82, 0.1)', color: '#695d52',
+              }}>Quick</span>
+              <h3 style={{
+                fontSize: '17px', fontWeight: 700, color: '#2f332f',
+                lineHeight: 1.2, margin: '0 0 4px',
+              }}>{quickOption.name}</h3>
+              <p style={{
+                color: '#5f5f5c', fontSize: '12px', lineHeight: 1.5,
+                margin: '0 0 10px',
+              }}>{quickOption.description}</p>
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <span style={{
+                  fontSize: '11px', fontWeight: 600, color: '#787c77',
+                }}>{quickOption.prepTime}</span>
+              </div>
+            </div>
+
+            {/* Expanded Steps */}
+            {expandedMeal === 'quick' && (
+              <div style={{
+                marginTop: '12px', paddingTop: '12px',
+                borderTop: '1px solid rgba(175,179,173,0.15)',
+              }}>
+                {quickOption.steps.map((step, i) => (
+                  <div key={i} style={{ display: 'flex', gap: '8px', marginBottom: '8px', alignItems: 'flex-start' }}>
+                    <div style={{
+                      width: '18px', height: '18px', borderRadius: '50%', flexShrink: 0,
+                      background: '#fdebdc', color: '#62564b',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontSize: '10px', fontWeight: 700, marginTop: '1px',
+                    }}>{i + 1}</div>
+                    <p style={{ color: '#5c605b', fontSize: '12px', margin: 0, lineHeight: 1.4 }}>{step}</p>
+                  </div>
+                ))}
+                <button
+                  onClick={(e) => { e.stopPropagation(); handleChoose('quick') }}
+                  style={{
+                    width: '100%', marginTop: '8px', padding: '12px', borderRadius: '9999px',
+                    border: 'none', fontFamily: "'Manrope', sans-serif", fontWeight: 700,
+                    fontSize: '13px', cursor: 'pointer',
+                    background: eaten && chosenMeal === 'quick' ? '#fdebdc' : '#695d52',
+                    color: eaten && chosenMeal === 'quick' ? '#62564b' : '#fff7f3',
+                  }}
+                >
+                  {eaten && chosenMeal === 'quick' ? '✕ Unmark' : "I'll eat this"}
+                </button>
+              </div>
+            )}
+
+            {/* Cycle Arrow */}
+            {quickPool.length > 1 && (
+              <button onClick={cycleQuick} style={{
+                alignSelf: 'center', marginTop: '8px', background: 'none', border: 'none',
+                cursor: 'pointer', padding: '4px',
+              }}>
+                <span className="material-symbols-outlined" style={{ fontSize: '18px', color: '#afb3ad' }}>swap_horiz</span>
+              </button>
+            )}
+          </div>
+        )}
       </section>
+
+      {/* ===== ALREADY EATEN ===== */}
+      <div style={{ textAlign: 'center' }}>
+        <button
+          onClick={() => {
+            if (eaten) { unmarkEaten(mealPeriod.mealType); setChosenMeal(null) }
+            else { markEaten(mealPeriod.mealType); setJustAte(true); setTimeout(() => setJustAte(false), 2000) }
+          }}
+          style={{
+            background: 'none', border: 'none', color: '#535351',
+            fontFamily: "'Manrope', sans-serif", fontWeight: 700, fontSize: '14px',
+            cursor: 'pointer', textDecoration: 'underline', textUnderlineOffset: '4px',
+          }}
+        >
+          {eaten ? '✕ Unmark meal' : justAte ? '✓ Logged!' : "I've already eaten"}
+        </button>
+      </div>
     </div>
   )
 }

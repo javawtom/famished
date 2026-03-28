@@ -36,6 +36,27 @@ export function AppProvider({ children }) {
   const [cookedRecipes, setCookedRecipes] = useLocalStorage('fn-cookedRecipes', {})
   const [streakDays, setStreakDays] = useLocalStorage('fn-streak', 0)
 
+  // Compute streak: count consecutive days (backwards from today) with at least one logged meal
+  const computedStreak = useMemo(() => {
+    const today = new Date()
+    let streak = 0
+    for (let i = 0; i < 365; i++) {
+      const d = new Date(today)
+      d.setDate(d.getDate() - i)
+      const dateKey = d.toISOString().split('T')[0]
+      const dayMeals = eatenMeals[dateKey]
+      if (dayMeals && Object.values(dayMeals).some(v => v)) {
+        streak++
+      } else if (i === 0) {
+        // Today hasn't been logged yet, that's ok — don't break streak
+        continue
+      } else {
+        break
+      }
+    }
+    return streak
+  }, [eatenMeals])
+
   const weekNum = getWeekNumber()
   const weeklyRecipes = useMemo(() => pickWeeklyRecipes(weekNum), [weekNum])
 
@@ -91,7 +112,7 @@ export function AppProvider({ children }) {
     checkedGroceries,
     eatenMeals,
     cookedRecipes,
-    streakDays,
+    streakDays: computedStreak,
     weeklyRecipes,
     toggleGrocery,
     markEaten,
