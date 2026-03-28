@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
 
 const navItems = [
@@ -12,6 +12,22 @@ const navItems = [
 export default function AppShell() {
   const location = useLocation()
   const [menuOpen, setMenuOpen] = useState(false)
+  const navRef = useRef(null)
+  const [indicatorStyle, setIndicatorStyle] = useState({ left: 0, width: 0 })
+
+  // Update pill indicator position when route changes
+  useEffect(() => {
+    if (!navRef.current) return
+    const activeLink = navRef.current.querySelector('[data-active="true"]')
+    if (activeLink) {
+      const navRect = navRef.current.getBoundingClientRect()
+      const linkRect = activeLink.getBoundingClientRect()
+      setIndicatorStyle({
+        left: linkRect.left - navRect.left,
+        width: linkRect.width,
+      })
+    }
+  }, [location.pathname])
 
   return (
     <div style={{ minHeight: '100dvh', background: '#faf9f5', color: '#2f332f', fontFamily: "'Manrope', sans-serif" }}>
@@ -43,7 +59,6 @@ export default function AppShell() {
       {/* ===== SLIDE-OUT MENU ===== */}
       {menuOpen && (
         <>
-          {/* Overlay */}
           <div
             onClick={() => setMenuOpen(false)}
             style={{
@@ -52,7 +67,6 @@ export default function AppShell() {
               backdropFilter: 'blur(4px)', WebkitBackdropFilter: 'blur(4px)',
             }}
           />
-          {/* Drawer */}
           <div style={{
             position: 'fixed', top: 0, left: 0, bottom: 0,
             width: '280px', background: '#faf9f5', zIndex: 101,
@@ -60,7 +74,6 @@ export default function AppShell() {
             boxShadow: '8px 0 32px rgba(0,0,0,0.1)',
             animation: 'slideIn 0.25s ease-out',
           }}>
-            {/* Close button */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '40px' }}>
               <h2 style={{ fontSize: '22px', fontWeight: 800, color: '#4f645b', margin: 0 }}>Famished</h2>
               <span
@@ -69,8 +82,6 @@ export default function AppShell() {
                 style={{ color: '#5f5f5c', cursor: 'pointer', padding: '4px' }}
               >close</span>
             </div>
-
-            {/* Nav links */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
               {navItems.map(item => {
                 const isActive = location.pathname === item.path
@@ -99,11 +110,7 @@ export default function AppShell() {
                 )
               })}
             </div>
-
-            {/* Spacer */}
             <div style={{ flex: 1 }} />
-
-            {/* Footer info */}
             <div style={{ padding: '20px 0', borderTop: '1px solid rgba(175,179,173,0.2)' }}>
               <p style={{ fontSize: '11px', color: '#787c77', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.1em', margin: '0 0 8px' }}>Integrations</p>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
@@ -122,30 +129,50 @@ export default function AppShell() {
       </main>
 
       {/* ===== BOTTOM NAV BAR ===== */}
-      <nav style={{
-        position: 'fixed', bottom: 0, left: 0, width: '100%', zIndex: 50,
-        display: 'flex', justifyContent: 'space-around', alignItems: 'center',
-        padding: '12px 16px 24px',
-        background: 'rgba(255,255,255,0.88)',
-        backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)',
-        borderTop: '1px solid rgba(175,179,173,0.15)',
-        boxShadow: '0 -12px 32px rgba(47,51,47,0.05)',
-        borderRadius: '24px 24px 0 0',
-      }}>
+      <nav
+        ref={navRef}
+        style={{
+          position: 'fixed', bottom: 0, left: 0, width: '100%', zIndex: 50,
+          display: 'flex', justifyContent: 'space-around', alignItems: 'center',
+          padding: '12px 16px 24px',
+          background: 'rgba(255,255,255,0.88)',
+          backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)',
+          borderTop: '1px solid rgba(175,179,173,0.15)',
+          boxShadow: '0 -12px 32px rgba(47,51,47,0.05)',
+          borderRadius: '24px 24px 0 0',
+        }}
+      >
+        {/* Sliding pill indicator */}
+        <div style={{
+          position: 'absolute',
+          top: '8px',
+          left: `${indicatorStyle.left}px`,
+          width: `${indicatorStyle.width}px`,
+          height: 'calc(100% - 32px)',
+          background: '#e0e4dd',
+          borderRadius: '16px',
+          transition: 'left 0.6s cubic-bezier(0.34, 1.2, 0.64, 1), width 0.7s cubic-bezier(0.22, 1, 0.36, 1)',
+          pointerEvents: 'none',
+          zIndex: 0,
+        }} />
+
         {navItems.map((item) => {
           const isActive = location.pathname === item.path
           return (
             <NavLink
               key={item.path}
               to={item.path}
+              data-active={isActive}
               style={{
                 display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
                 padding: '8px 20px', borderRadius: '16px',
                 textDecoration: 'none',
-                background: isActive ? '#e0e4dd' : 'transparent',
+                background: 'transparent',
                 color: isActive ? '#4f645b' : '#5f5f5c',
                 transform: isActive ? 'translateY(-2px)' : 'none',
-                transition: 'all 0.3s ease',
+                transition: 'color 0.3s ease, transform 0.4s cubic-bezier(0.34, 1.2, 0.64, 1)',
+                position: 'relative',
+                zIndex: 1,
               }}
             >
               <span
@@ -153,11 +180,12 @@ export default function AppShell() {
                 style={{
                   fontSize: '24px',
                   fontVariationSettings: isActive ? "'FILL' 1, 'wght' 400" : "'FILL' 0, 'wght' 400",
+                  transition: 'font-variation-settings 0.3s ease',
                 }}
               >
                 {item.icon}
               </span>
-              <span style={{ fontSize: '11px', fontWeight: 500, letterSpacing: '0.04em', marginTop: '2px' }}>{item.label}</span>
+              <span style={{ fontSize: '11px', fontWeight: isActive ? 700 : 500, letterSpacing: '0.04em', marginTop: '2px', transition: 'font-weight 0.3s ease' }}>{item.label}</span>
             </NavLink>
           )
         })}
