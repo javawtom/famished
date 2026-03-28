@@ -199,12 +199,19 @@ export default function FuelPage() {
                 loading="lazy"
               />
               {isLiked(healthyOption.id) && (
-                <span className="material-symbols-outlined" style={{
+                <div style={{
                   position: 'absolute', top: '10px', right: '10px',
-                  fontSize: '22px', color: '#e74c3c',
-                  fontVariationSettings: "'FILL' 1",
-                  filter: 'drop-shadow(0 1px 3px rgba(0,0,0,0.3))',
-                }}>favorite</span>
+                  width: '34px', height: '34px', borderRadius: '10px',
+                  background: 'rgba(255,255,255,0.85)',
+                  backdropFilter: 'blur(6px)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.12)',
+                }}>
+                  <span className="material-symbols-outlined" style={{
+                    fontSize: '20px', color: '#e74c3c',
+                    fontVariationSettings: "'FILL' 1",
+                  }}>favorite</span>
+                </div>
               )}
             </div>
             <div style={{ padding: '0 4px' }}>
@@ -307,12 +314,19 @@ export default function FuelPage() {
                 loading="lazy"
               />
               {isLiked(quickOption.id) && (
-                <span className="material-symbols-outlined" style={{
+                <div style={{
                   position: 'absolute', top: '10px', right: '10px',
-                  fontSize: '22px', color: '#e74c3c',
-                  fontVariationSettings: "'FILL' 1",
-                  filter: 'drop-shadow(0 1px 3px rgba(0,0,0,0.3))',
-                }}>favorite</span>
+                  width: '34px', height: '34px', borderRadius: '10px',
+                  background: 'rgba(255,255,255,0.85)',
+                  backdropFilter: 'blur(6px)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.12)',
+                }}>
+                  <span className="material-symbols-outlined" style={{
+                    fontSize: '20px', color: '#e74c3c',
+                    fontVariationSettings: "'FILL' 1",
+                  }}>favorite</span>
+                </div>
               )}
             </div>
             <div style={{ padding: '0 4px' }}>
