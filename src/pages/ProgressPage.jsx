@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useApp } from '../context/AppContext'
 import useWithings from '../hooks/useWithings'
 import schedule, { formatTime } from '../data/schedule'
@@ -39,6 +39,19 @@ export default function ProgressPage() {
   const [showWeightInput, setShowWeightInput] = useState(false)
   const [weightInput, setWeightInput] = useState('')
   const [sliderValue, setSliderValue] = useState(targetWeight)
+  const [prevSlider, setPrevSlider] = useState(targetWeight)
+  const [slideDir, setSlideDir] = useState(0) // -1 = down, 1 = up, 0 = none
+  const slideTimeout = useRef(null)
+
+  // Animate the number when slider moves
+  useEffect(() => {
+    if (sliderValue !== prevSlider) {
+      setSlideDir(sliderValue > prevSlider ? 1 : -1)
+      setPrevSlider(sliderValue)
+      clearTimeout(slideTimeout.current)
+      slideTimeout.current = setTimeout(() => setSlideDir(0), 250)
+    }
+  }, [sliderValue])
 
   // Sync slider with stored target
   useEffect(() => { setSliderValue(targetWeight) }, [targetWeight])
@@ -204,7 +217,12 @@ export default function ProgressPage() {
           </div>
           <div style={{ textAlign: 'right' }}>
             <p style={{ color: '#5f5f5c', fontSize: '14px', fontWeight: 500, margin: '0 0 4px' }}>Target</p>
-            <h3 style={{ fontSize: '20px', fontWeight: 700, color: '#4f645b', margin: 0 }}>{sliderValue} lbs</h3>
+            <div style={{ overflow: 'hidden', height: '28px' }}>
+              <h3 key={sliderValue} style={{
+                fontSize: '20px', fontWeight: 700, color: '#4f645b', margin: 0,
+                animation: slideDir !== 0 ? `slideNum 0.25s cubic-bezier(0.34, 1.2, 0.64, 1)` : 'none',
+              }}>{sliderValue} lbs</h3>
+            </div>
           </div>
         </div>
 
@@ -262,7 +280,12 @@ export default function ProgressPage() {
         <div style={{ marginTop: '24px', padding: '20px', background: '#f3f4ef', borderRadius: '16px' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
             <span style={{ fontSize: '13px', fontWeight: 700, color: '#5f5f5c', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Target Weight</span>
-            <span style={{ fontSize: '18px', fontWeight: 700, color: '#4f645b' }}>{sliderValue} lbs</span>
+            <div style={{ overflow: 'hidden', height: '24px' }}>
+              <span key={`sl-${sliderValue}`} style={{
+                fontSize: '18px', fontWeight: 700, color: '#4f645b', display: 'block',
+                animation: slideDir !== 0 ? `slideNum 0.25s cubic-bezier(0.34, 1.2, 0.64, 1)` : 'none',
+              }}>{sliderValue} lbs</span>
+            </div>
           </div>
           <input
             type="range"

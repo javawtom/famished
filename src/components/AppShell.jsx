@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { NavLink, Outlet, useLocation } from 'react-router-dom'
+import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 
 const navItems = [
   { path: '/',         icon: 'bolt',            label: 'Fuel'     },
@@ -11,6 +11,7 @@ const navItems = [
 
 export default function AppShell() {
   const location = useLocation()
+  const navigate = useNavigate()
   const [menuOpen, setMenuOpen] = useState(false)
   const navRef = useRef(null)
   const [indicatorStyle, setIndicatorStyle] = useState({ left: 0, width: 0 })
@@ -28,6 +29,26 @@ export default function AppShell() {
       })
     }
   }, [location.pathname])
+
+  // Arrow key navigation between tabs
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return
+      if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+        e.preventDefault()
+        const currentIndex = navItems.findIndex(item => item.path === location.pathname)
+        if (currentIndex === -1) return
+        const nextIndex = e.key === 'ArrowRight'
+          ? Math.min(currentIndex + 1, navItems.length - 1)
+          : Math.max(currentIndex - 1, 0)
+        if (nextIndex !== currentIndex) {
+          navigate(navItems[nextIndex].path)
+        }
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [location.pathname, navigate])
 
   return (
     <div style={{ minHeight: '100dvh', background: '#faf9f5', color: '#2f332f', fontFamily: "'Manrope', sans-serif" }}>

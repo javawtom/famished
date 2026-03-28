@@ -197,6 +197,11 @@ body {
   to { transform: translateX(0); }
 }
 
+@keyframes slideNum {
+  0% { transform: translateY(100%); opacity: 0; }
+  100% { transform: translateY(0); opacity: 1; }
+}
+
 /* Range slider thumb */
 input[type="range"]::-webkit-slider-thumb {
   -webkit-appearance: none;
