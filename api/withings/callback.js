@@ -3,8 +3,9 @@ import { exchangeCodeForTokens, makeTokenCookie } from '../_withings.js'
 export default async function handler(req, res) {
   const { code } = req.query
 
+  // Withings tests this URL — return 200 so the test passes
   if (!code) {
-    return res.status(400).json({ error: 'No authorization code received' })
+    return res.status(200).json({ status: 'ok', message: 'Withings callback endpoint ready' })
   }
 
   try {
