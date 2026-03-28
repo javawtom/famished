@@ -42,6 +42,7 @@ export default function ProgressPage() {
   const [showWeightInput, setShowWeightInput] = useState(false)
   const [weightInput, setWeightInput] = useState('')
   const [targetDraft, setTargetDraft] = useState(targetWeight)
+  const [hoveredPoint, setHoveredPoint] = useState(null)
 
   useEffect(() => { setTargetDraft(targetWeight) }, [targetWeight])
 
@@ -181,8 +182,25 @@ export default function ProgressPage() {
               <g key={i}>
                 <circle cx={p.x} cy={p.y} r={i === points.length - 1 ? 6 : 3.5}
                   fill={i === points.length - 1 ? '#4f645b' : '#a3bfb3'} stroke="#fff" strokeWidth="2" />
-                {/* Show weight label on latest point */}
-                {i === points.length - 1 && (
+                {/* Invisible larger touch target */}
+                <circle cx={p.x} cy={p.y} r="14" fill="transparent" style={{ cursor: 'pointer' }}
+                  onMouseEnter={() => setHoveredPoint(i)}
+                  onMouseLeave={() => setHoveredPoint(null)}
+                  onTouchStart={(e) => { e.preventDefault(); setHoveredPoint(hoveredPoint === i ? null : i) }}
+                />
+                {/* Tooltip popup */}
+                {hoveredPoint === i && (
+                  <g>
+                    <rect x={p.x - 38} y={p.y - 42} width="76" height="28" rx="8"
+                      fill="#2f332f" opacity="0.92" />
+                    <text x={p.x} y={p.y - 24} textAnchor="middle"
+                      fill="#fff" fontSize="11" fontWeight="700" fontFamily="Manrope">
+                      {Number(p.weight).toFixed(1)} lbs
+                    </text>
+                  </g>
+                )}
+                {/* Always show label on latest point */}
+                {i === points.length - 1 && hoveredPoint !== i && (
                   <text x={p.x} y={p.y - 14} textAnchor="middle"
                     fill="#4f645b" fontSize="12" fontWeight="700" fontFamily="Manrope">{Number(p.weight).toFixed(1)}</text>
                 )}
@@ -260,17 +278,17 @@ export default function ProgressPage() {
       </div>
 
       {/* ===== SLEEP QUALITY CARD ===== */}
-      {sleep.latest && (
-        <section style={{
-          background: '#ffffff', padding: '32px', borderRadius: '2rem',
-          boxShadow: '0 12px 32px rgba(47, 51, 47, 0.08)',
-        }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px' }}>
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-                <span className="material-symbols-outlined" style={{ fontSize: '24px', color: '#4f645b', fontVariationSettings: "'FILL' 1" }}>bedtime</span>
-                <p style={{ fontSize: '11px', fontWeight: 700, color: '#4f645b', textTransform: 'uppercase', letterSpacing: '0.12em', margin: 0 }}>Last Night's Sleep</p>
-              </div>
+      <section style={{
+        background: '#ffffff', padding: '32px', borderRadius: '2rem',
+        boxShadow: '0 12px 32px rgba(47, 51, 47, 0.08)',
+      }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px' }}>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+              <span className="material-symbols-outlined" style={{ fontSize: '24px', color: '#4f645b', fontVariationSettings: "'FILL' 1" }}>bedtime</span>
+              <p style={{ fontSize: '11px', fontWeight: 700, color: '#4f645b', textTransform: 'uppercase', letterSpacing: '0.12em', margin: 0 }}>Sleep Quality</p>
+            </div>
+            {sleep.latest ? (
               <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
                 <h3 style={{ fontSize: '40px', fontWeight: 700, color: '#2f332f', margin: 0 }}>
                   {sleep.latest.sleepScore || '—'}
@@ -282,88 +300,95 @@ export default function ProgressPage() {
                   background: `${sleep.getQuality(sleep.latest.sleepScore).color}15`,
                 }}>{sleep.getQuality(sleep.latest.sleepScore).label}</span>
               </div>
+            ) : (
+              <h3 style={{ fontSize: '40px', fontWeight: 700, color: '#d5d8d3', margin: 0 }}>—</h3>
+            )}
+          </div>
+          {sleep.averages?.last7 && (
+            <div style={{ textAlign: 'right' }}>
+              <p style={{ fontSize: '11px', fontWeight: 600, color: '#787c77', margin: '0 0 4px' }}>7-Day Avg</p>
+              <p style={{ fontSize: '20px', fontWeight: 700, color: '#4f645b', margin: 0 }}>{sleep.averages.last7.score || '—'}</p>
+              <p style={{ fontSize: '12px', color: '#787c77', margin: 0 }}>{sleep.averages.last7.hours || '—'}h avg</p>
             </div>
-            {sleep.averages?.last7 && (
-              <div style={{ textAlign: 'right' }}>
-                <p style={{ fontSize: '11px', fontWeight: 600, color: '#787c77', margin: '0 0 4px' }}>7-Day Avg</p>
-                <p style={{ fontSize: '20px', fontWeight: 700, color: '#4f645b', margin: 0 }}>{sleep.averages.last7.score || '—'}</p>
-                <p style={{ fontSize: '12px', color: '#787c77', margin: 0 }}>{sleep.averages.last7.hours || '—'}h avg</p>
-              </div>
-            )}
-          </div>
+          )}
+        </div>
 
-          {/* Sleep breakdown bars */}
-          <div style={{ marginBottom: '24px' }}>
-            <p style={{ fontSize: '11px', fontWeight: 700, color: '#5f5f5c', textTransform: 'uppercase', letterSpacing: '0.12em', margin: '0 0 12px' }}>Sleep Stages</p>
-            {[
-              { label: 'Deep', hours: sleep.latest.deepHours, color: '#2f433c', max: 3 },
-              { label: 'REM', hours: sleep.latest.remHours, color: '#4f645b', max: 3 },
-              { label: 'Light', hours: sleep.latest.lightHours, color: '#a3bfb3', max: 5 },
-            ].map(stage => (
-              <div key={stage.label} style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '10px' }}>
-                <span style={{ fontSize: '12px', fontWeight: 600, color: '#5f5f5c', width: '40px' }}>{stage.label}</span>
-                <div style={{ flex: 1, height: '10px', background: '#edefe9', borderRadius: '5px', overflow: 'hidden' }}>
-                  <div style={{
-                    width: `${Math.min(((stage.hours || 0) / stage.max) * 100, 100)}%`,
-                    height: '100%', background: stage.color, borderRadius: '5px',
-                    transition: 'width 0.5s ease',
-                  }} />
-                </div>
-                <span style={{ fontSize: '12px', fontWeight: 700, color: '#2f332f', width: '36px', textAlign: 'right' }}>
-                  {stage.hours || '—'}h
-                </span>
+        {/* Sleep breakdown bars */}
+        <div style={{ marginBottom: '24px' }}>
+          <p style={{ fontSize: '11px', fontWeight: 700, color: '#5f5f5c', textTransform: 'uppercase', letterSpacing: '0.12em', margin: '0 0 12px' }}>Sleep Stages</p>
+          {[
+            { label: 'Deep', hours: sleep.latest?.deepHours, color: '#2f433c', max: 3 },
+            { label: 'REM', hours: sleep.latest?.remHours, color: '#4f645b', max: 3 },
+            { label: 'Light', hours: sleep.latest?.lightHours, color: '#a3bfb3', max: 5 },
+          ].map(stage => (
+            <div key={stage.label} style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '10px' }}>
+              <span style={{ fontSize: '12px', fontWeight: 600, color: '#5f5f5c', width: '40px' }}>{stage.label}</span>
+              <div style={{ flex: 1, height: '10px', background: '#edefe9', borderRadius: '5px', overflow: 'hidden' }}>
+                <div style={{
+                  width: stage.hours ? `${Math.min((stage.hours / stage.max) * 100, 100)}%` : '0%',
+                  height: '100%', background: stage.color, borderRadius: '5px',
+                  transition: 'width 0.5s ease',
+                }} />
               </div>
-            ))}
-          </div>
+              <span style={{ fontSize: '12px', fontWeight: 700, color: '#2f332f', width: '36px', textAlign: 'right' }}>
+                {stage.hours ? `${stage.hours}h` : '—'}
+              </span>
+            </div>
+          ))}
+        </div>
 
-          {/* Vitals row */}
-          <div style={{ display: 'flex', gap: '16px', marginBottom: '20px' }}>
-            {sleep.latest.totalHours && (
-              <div style={{ flex: 1, background: '#f3f4ef', padding: '16px', borderRadius: '16px', textAlign: 'center' }}>
-                <span className="material-symbols-outlined" style={{ color: '#4f645b', fontSize: '20px', display: 'block', marginBottom: '6px' }}>schedule</span>
-                <p style={{ fontSize: '18px', fontWeight: 700, color: '#2f332f', margin: '0 0 2px' }}>{sleep.latest.totalHours}h</p>
-                <p style={{ fontSize: '10px', fontWeight: 600, color: '#787c77', textTransform: 'uppercase', margin: 0 }}>Total</p>
-              </div>
-            )}
-            {sleep.latest.hrAvg && (
-              <div style={{ flex: 1, background: '#f3f4ef', padding: '16px', borderRadius: '16px', textAlign: 'center' }}>
-                <span className="material-symbols-outlined" style={{ color: '#4f645b', fontSize: '20px', display: 'block', marginBottom: '6px' }}>favorite</span>
-                <p style={{ fontSize: '18px', fontWeight: 700, color: '#2f332f', margin: '0 0 2px' }}>{sleep.latest.hrAvg}</p>
-                <p style={{ fontSize: '10px', fontWeight: 600, color: '#787c77', textTransform: 'uppercase', margin: 0 }}>Avg HR</p>
-              </div>
-            )}
-            {sleep.latest.efficiency && (
-              <div style={{ flex: 1, background: '#f3f4ef', padding: '16px', borderRadius: '16px', textAlign: 'center' }}>
-                <span className="material-symbols-outlined" style={{ color: '#4f645b', fontSize: '20px', display: 'block', marginBottom: '6px' }}>speed</span>
-                <p style={{ fontSize: '18px', fontWeight: 700, color: '#2f332f', margin: '0 0 2px' }}>{sleep.latest.efficiency}%</p>
-                <p style={{ fontSize: '10px', fontWeight: 600, color: '#787c77', textTransform: 'uppercase', margin: 0 }}>Efficiency</p>
-              </div>
-            )}
+        {/* Vitals row */}
+        <div style={{ display: 'flex', gap: '16px', marginBottom: '20px' }}>
+          <div style={{ flex: 1, background: '#f3f4ef', padding: '16px', borderRadius: '16px', textAlign: 'center' }}>
+            <span className="material-symbols-outlined" style={{ color: '#4f645b', fontSize: '20px', display: 'block', marginBottom: '6px' }}>schedule</span>
+            <p style={{ fontSize: '18px', fontWeight: 700, color: sleep.latest?.totalHours ? '#2f332f' : '#d5d8d3', margin: '0 0 2px' }}>{sleep.latest?.totalHours || '—'}h</p>
+            <p style={{ fontSize: '10px', fontWeight: 600, color: '#787c77', textTransform: 'uppercase', margin: 0 }}>Total</p>
           </div>
+          <div style={{ flex: 1, background: '#f3f4ef', padding: '16px', borderRadius: '16px', textAlign: 'center' }}>
+            <span className="material-symbols-outlined" style={{ color: '#4f645b', fontSize: '20px', display: 'block', marginBottom: '6px' }}>favorite</span>
+            <p style={{ fontSize: '18px', fontWeight: 700, color: sleep.latest?.hrAvg ? '#2f332f' : '#d5d8d3', margin: '0 0 2px' }}>{sleep.latest?.hrAvg || '—'}</p>
+            <p style={{ fontSize: '10px', fontWeight: 600, color: '#787c77', textTransform: 'uppercase', margin: 0 }}>Avg HR</p>
+          </div>
+          <div style={{ flex: 1, background: '#f3f4ef', padding: '16px', borderRadius: '16px', textAlign: 'center' }}>
+            <span className="material-symbols-outlined" style={{ color: '#4f645b', fontSize: '20px', display: 'block', marginBottom: '6px' }}>speed</span>
+            <p style={{ fontSize: '18px', fontWeight: 700, color: sleep.latest?.efficiency ? '#2f332f' : '#d5d8d3', margin: '0 0 2px' }}>{sleep.latest?.efficiency ? `${sleep.latest.efficiency}%` : '—'}</p>
+            <p style={{ fontSize: '10px', fontWeight: 600, color: '#787c77', textTransform: 'uppercase', margin: 0 }}>Efficiency</p>
+          </div>
+        </div>
 
-          {/* Eat/Sleep correlation */}
-          {(() => {
-            const corr = sleep.getCorrelation(eatenMeals)
-            if (!corr) return null
-            const colors = {
-              positive: { bg: '#d1e8dd', text: '#2d7a4f', icon: 'check_circle' },
-              neutral: { bg: '#e6e9e3', text: '#5f5f5c', icon: 'info' },
-              negative: { bg: '#fde8e4', text: '#a73b21', icon: 'warning' },
-              warning: { bg: '#fff4d6', text: '#b8860b', icon: 'info' },
-            }
-            const c = colors[corr.type] || colors.neutral
-            return (
-              <div style={{
-                display: 'flex', alignItems: 'center', gap: '10px',
-                padding: '14px 18px', borderRadius: '14px', background: c.bg,
-              }}>
-                <span className="material-symbols-outlined" style={{ fontSize: '18px', color: c.text, fontVariationSettings: "'FILL' 1" }}>{c.icon}</span>
-                <p style={{ fontSize: '13px', fontWeight: 600, color: c.text, margin: 0 }}>{corr.message}</p>
-              </div>
-            )
-          })()}
-        </section>
-      )}
+        {/* No data prompt */}
+        {!sleep.latest && (
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: '10px',
+            padding: '14px 18px', borderRadius: '14px', background: '#f3f4ef',
+          }}>
+            <span className="material-symbols-outlined" style={{ fontSize: '18px', color: '#4f645b' }}>sync</span>
+            <p style={{ fontSize: '13px', fontWeight: 600, color: '#5f5f5c', margin: 0 }}>Sync your Withings Sleep Mat to see sleep data here.</p>
+          </div>
+        )}
+
+        {/* Eat/Sleep correlation (only when data exists) */}
+        {sleep.latest && (() => {
+          const corr = sleep.getCorrelation(eatenMeals)
+          if (!corr) return null
+          const colors = {
+            positive: { bg: '#d1e8dd', text: '#2d7a4f', icon: 'check_circle' },
+            neutral: { bg: '#e6e9e3', text: '#5f5f5c', icon: 'info' },
+            negative: { bg: '#fde8e4', text: '#a73b21', icon: 'warning' },
+            warning: { bg: '#fff4d6', text: '#b8860b', icon: 'info' },
+          }
+          const c = colors[corr.type] || colors.neutral
+          return (
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: '10px',
+              padding: '14px 18px', borderRadius: '14px', background: c.bg,
+            }}>
+              <span className="material-symbols-outlined" style={{ fontSize: '18px', color: c.text, fontVariationSettings: "'FILL' 1" }}>{c.icon}</span>
+              <p style={{ fontSize: '13px', fontWeight: 600, color: c.text, margin: 0 }}>{corr.message}</p>
+            </div>
+          )
+        })()}
+      </section>
 
       {/* ===== DAILY FUELING SCHEDULE ===== */}
       <section>
