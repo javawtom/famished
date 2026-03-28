@@ -448,7 +448,7 @@ export default function ProfilePage({ onClose }) {
                     style={{
                       padding: '8px 16px', borderRadius: '9999px', border: 'none',
                       fontFamily: "'Manrope', sans-serif", fontWeight: 700, fontSize: '12px',
-                      cursor: 'pointer', transition: 'all 0.3s ease',
+                      cursor: 'pointer',
                       background: withings.connected ? 'rgba(167,59,33,0.1)' : '#4f645b',
                       color: withings.connected ? '#a73b21' : '#e7fef3',
                     }}

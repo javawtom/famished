@@ -1,37 +1,47 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 
 export default function useWithings() {
-  const [status, setStatus] = useState({ connected: false, loading: true })
+  const [connected, setConnected] = useState(false)
+  const [loading, setLoading] = useState(true)
+  const [serverDown, setServerDown] = useState(false)
   const [measurements, setMeasurements] = useState([])
   const [latest, setLatest] = useState(null)
   const [syncing, setSyncing] = useState(false)
+  const connectedRef = useRef(false)
 
-  // Check connection status on mount + auto-refresh every 60s when connected
+  // Check status once on mount
   useEffect(() => {
     checkStatus()
+  }, [])
 
+  // Set up auto-refresh interval (reads ref, not state, to avoid re-render loop)
+  useEffect(() => {
     const interval = setInterval(() => {
-      if (status.connected) {
+      if (connectedRef.current) {
         fetchMeasurements()
       }
     }, 60000)
-
     return () => clearInterval(interval)
-  }, [status.connected])
+  }, [])
 
   const checkStatus = useCallback(async () => {
     try {
       const res = await fetch('/api/withings/status')
       const data = await res.json()
-      setStatus({ connected: data.connected, loading: false })
+      connectedRef.current = data.connected
+      setConnected(data.connected)
+      setLoading(false)
+      setServerDown(false)
 
-      // Auto-fetch measurements if connected
       if (data.connected) {
         fetchMeasurements()
       }
     } catch (err) {
-      console.warn('Withings status check failed (is the API server running?):', err.message)
-      setStatus({ connected: false, loading: false, serverDown: true })
+      console.warn('Withings status check failed:', err.message)
+      connectedRef.current = false
+      setConnected(false)
+      setLoading(false)
+      setServerDown(true)
     }
   }, [])
 
@@ -44,9 +54,11 @@ export default function useWithings() {
       if (data.connected) {
         setMeasurements(data.measurements || [])
         setLatest(data.latest || null)
-        setStatus({ connected: true, loading: false })
+        connectedRef.current = true
+        setConnected(true)
       } else {
-        setStatus({ connected: false, loading: false })
+        connectedRef.current = false
+        setConnected(false)
       }
     } catch (err) {
       console.warn('Measurement fetch failed:', err.message)
@@ -62,7 +74,8 @@ export default function useWithings() {
   const disconnect = useCallback(async () => {
     try {
       await fetch('/api/withings/disconnect', { method: 'POST' })
-      setStatus({ connected: false, loading: false })
+      connectedRef.current = false
+      setConnected(false)
       setMeasurements([])
       setLatest(null)
     } catch (err) {
@@ -71,9 +84,9 @@ export default function useWithings() {
   }, [])
 
   return {
-    connected: status.connected,
-    loading: status.loading,
-    serverDown: status.serverDown,
+    connected,
+    loading,
+    serverDown,
     measurements,
     latest,
     syncing,
