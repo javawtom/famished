@@ -37,8 +37,8 @@ export default function FuelPage() {
 
   const eaten = isMealEaten(mealPeriod.mealType)
   const [justAte, setJustAte] = useState(false)
-  
   const progressPercent = Math.min(100, Math.round(((currentWeight - 145) / (175 - 145)) * 100))
+  const [expandedMeal, setExpandedMeal] = useState(null)
 
   const handleEaten = () => {
     markEaten(mealPeriod.mealType)
@@ -46,52 +46,56 @@ export default function FuelPage() {
     setTimeout(() => setJustAte(false), 2000)
   }
 
-  const [expandedMeal, setExpandedMeal] = useState(null)
-
   return (
-    <div className="space-y-10 animate-fade-up">
-      {/* ===== WELCOME & ENCOURAGEMENT ===== */}
-      <section className="space-y-2">
-        <h2 className="text-4xl font-extrabold tracking-tight text-on-surface">{encouragement}</h2>
-        <p className="text-secondary text-lg leading-relaxed">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '48px' }}>
+      {/* ===== WELCOME ===== */}
+      <section>
+        <h2 style={{ fontSize: '36px', fontWeight: 800, letterSpacing: '-0.02em', color: '#2f332f', margin: 0 }}>{encouragement}</h2>
+        <p style={{ color: '#5f5f5c', fontSize: '18px', lineHeight: 1.6, marginTop: '8px' }}>
           You are doing enough. Let's find something simple to nourish you today.
         </p>
       </section>
 
       {/* ===== CURRENT MEAL SPOTLIGHT ===== */}
-      <section className="bg-surface-container-lowest rounded-[2rem] p-7 botanical-shadow">
-        <div className="flex items-center gap-2 mb-4">
-          <span className="material-symbols-outlined text-primary filled">{mealPeriod.icon}</span>
-          <span className="text-xs font-bold uppercase tracking-widest text-secondary">Current Meal</span>
+      <section style={{
+        background: '#ffffff', borderRadius: '2rem', padding: '32px',
+        boxShadow: '0 12px 32px rgba(47, 51, 47, 0.08)',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
+          <span className="material-symbols-outlined" style={{ color: '#4f645b', fontVariationSettings: "'FILL' 1" }}>{mealPeriod.icon}</span>
+          <span style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.12em', color: '#5f5f5c' }}>Current Meal</span>
         </div>
-        <h3 className="text-3xl font-bold text-primary mb-1">{mealPeriod.label}</h3>
-        <p className="text-secondary-dim text-sm font-medium">
+        <h3 style={{ fontSize: '30px', fontWeight: 700, color: '#4f645b', margin: '0 0 4px' }}>{mealPeriod.label}</h3>
+        <p style={{ color: '#535351', fontSize: '15px', fontWeight: 500 }}>
           {formatTime(mealPeriod.time)} • {mealPeriod.mealType === 'snack' ? 'Quick Energy' : 'Energy Focus'}
         </p>
 
-        <div className="mt-7 space-y-3 stagger-children">
+        <div style={{ marginTop: '32px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
           {/* Healthy Option */}
           {healthyOption && (
             <div
-              className="group cursor-pointer p-5 rounded-2xl bg-surface-container-low hover:bg-surface-container-highest transition-all duration-300"
               onClick={() => setExpandedMeal(expandedMeal === healthyOption.id ? null : healthyOption.id)}
+              style={{
+                padding: '24px', borderRadius: '16px', background: '#f3f4ef',
+                cursor: 'pointer', transition: 'all 0.3s ease',
+              }}
             >
-              <div className="flex justify-between items-start">
-                <div className="space-y-1">
-                  <span className="text-primary font-bold text-xs block">Option 1: Healthy</span>
-                  <h4 className="text-xl font-bold text-on-surface">{healthyOption.name}</h4>
-                  <p className="text-secondary text-sm">{healthyOption.description}</p>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                <div>
+                  <span style={{ color: '#4f645b', fontWeight: 700, fontSize: '13px', display: 'block', marginBottom: '4px' }}>Option 1: Healthy</span>
+                  <h4 style={{ fontSize: '20px', fontWeight: 700, color: '#2f332f', margin: '0 0 4px' }}>{healthyOption.name}</h4>
+                  <p style={{ color: '#5f5f5c', fontSize: '14px', margin: 0 }}>{healthyOption.description}</p>
                 </div>
-                <span className="material-symbols-outlined text-primary-dim opacity-40 group-hover:opacity-100 transition-opacity">
+                <span className="material-symbols-outlined" style={{ color: '#43574f', opacity: 0.4, fontSize: '20px' }}>
                   {expandedMeal === healthyOption.id ? 'expand_less' : 'arrow_forward_ios'}
                 </span>
               </div>
               {expandedMeal === healthyOption.id && (
-                <div className="mt-4 pt-4 space-y-2 animate-fade-up" style={{ borderTop: '1px solid rgba(175,179,173,0.15)' }}>
+                <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid rgba(175,179,173,0.2)', display: 'flex', flexDirection: 'column', gap: '10px' }}>
                   {healthyOption.steps.map((step, i) => (
-                    <div key={i} className="flex items-start gap-3">
-                      <span className="material-symbols-outlined text-primary-dim text-sm mt-0.5">check_circle</span>
-                      <p className="text-on-surface-variant text-sm">{step}</p>
+                    <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
+                      <span className="material-symbols-outlined" style={{ color: '#4f645b', fontSize: '16px', marginTop: '2px', fontVariationSettings: "'FILL' 1" }}>check_circle</span>
+                      <p style={{ color: '#5c605b', fontSize: '14px', margin: 0, lineHeight: 1.5 }}>{step}</p>
                     </div>
                   ))}
                 </div>
@@ -102,25 +106,28 @@ export default function FuelPage() {
           {/* Quick Option */}
           {quickOption && (
             <div
-              className="group cursor-pointer p-5 rounded-2xl bg-surface-container-low hover:bg-surface-container-highest transition-all duration-300"
               onClick={() => setExpandedMeal(expandedMeal === quickOption.id ? null : quickOption.id)}
+              style={{
+                padding: '24px', borderRadius: '16px', background: '#f3f4ef',
+                cursor: 'pointer', transition: 'all 0.3s ease',
+              }}
             >
-              <div className="flex justify-between items-start">
-                <div className="space-y-1">
-                  <span className="text-tertiary font-bold text-xs block">Option 2: Quick</span>
-                  <h4 className="text-xl font-bold text-on-surface">{quickOption.name}</h4>
-                  <p className="text-secondary text-sm">{quickOption.description}</p>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                <div>
+                  <span style={{ color: '#695d52', fontWeight: 700, fontSize: '13px', display: 'block', marginBottom: '4px' }}>Option 2: Quick</span>
+                  <h4 style={{ fontSize: '20px', fontWeight: 700, color: '#2f332f', margin: '0 0 4px' }}>{quickOption.name}</h4>
+                  <p style={{ color: '#5f5f5c', fontSize: '14px', margin: 0 }}>{quickOption.description}</p>
                 </div>
-                <span className="material-symbols-outlined text-primary-dim opacity-40 group-hover:opacity-100 transition-opacity">
+                <span className="material-symbols-outlined" style={{ color: '#43574f', opacity: 0.4, fontSize: '20px' }}>
                   {expandedMeal === quickOption.id ? 'expand_less' : 'arrow_forward_ios'}
                 </span>
               </div>
               {expandedMeal === quickOption.id && (
-                <div className="mt-4 pt-4 space-y-2 animate-fade-up" style={{ borderTop: '1px solid rgba(175,179,173,0.15)' }}>
+                <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid rgba(175,179,173,0.2)', display: 'flex', flexDirection: 'column', gap: '10px' }}>
                   {quickOption.steps.map((step, i) => (
-                    <div key={i} className="flex items-start gap-3">
-                      <span className="material-symbols-outlined text-primary-dim text-sm mt-0.5">check_circle</span>
-                      <p className="text-on-surface-variant text-sm">{step}</p>
+                    <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: '10px' }}>
+                      <span className="material-symbols-outlined" style={{ color: '#4f645b', fontSize: '16px', marginTop: '2px', fontVariationSettings: "'FILL' 1" }}>check_circle</span>
+                      <p style={{ color: '#5c605b', fontSize: '14px', margin: 0, lineHeight: 1.5 }}>{step}</p>
                     </div>
                   ))}
                 </div>
@@ -130,50 +137,60 @@ export default function FuelPage() {
         </div>
 
         {/* I've Eaten Button */}
-        <div className="mt-8">
+        <div style={{ marginTop: '40px' }}>
           <button
             onClick={handleEaten}
             disabled={eaten}
-            className={`w-full py-4 rounded-full font-bold text-lg transition-all duration-300 active:scale-95 ${
-              eaten || justAte
-                ? 'bg-primary-container text-on-primary-container'
-                : 'bg-gradient-to-r from-primary to-primary-dim text-on-primary botanical-shadow'
-            }`}
+            style={{
+              width: '100%', padding: '20px', borderRadius: '9999px', border: 'none',
+              fontFamily: "'Manrope', sans-serif", fontWeight: 700, fontSize: '18px',
+              cursor: eaten ? 'default' : 'pointer',
+              background: eaten || justAte
+                ? '#d1e8dd'
+                : 'linear-gradient(to right, #4f645b, #43574f)',
+              color: eaten || justAte ? '#42564e' : '#e7fef3',
+              boxShadow: eaten ? 'none' : '0 12px 32px rgba(47, 51, 47, 0.08)',
+              transition: 'all 0.3s ease',
+            }}
           >
             {eaten ? '\u2713 You\u2019ve fueled up' : justAte ? '\u2713 Logged!' : "I've Eaten"}
           </button>
         </div>
       </section>
 
-      {/* ===== MINI PROGRESS ===== */}
-      <section className="bg-surface-container p-7 rounded-[2rem] space-y-5">
-        <div className="flex justify-between items-end">
-          <div className="space-y-1">
-            <h4 className="text-xl font-bold text-on-surface">Your Journey</h4>
-            <p className="text-secondary text-sm">Targeting 175 lbs for health</p>
+      {/* ===== PROGRESS ===== */}
+      <section style={{
+        background: '#edefe9', padding: '32px', borderRadius: '2rem',
+        display: 'flex', flexDirection: 'column', gap: '24px',
+      }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+          <div>
+            <h4 style={{ fontSize: '20px', fontWeight: 700, color: '#2f332f', margin: '0 0 4px' }}>Your Journey</h4>
+            <p style={{ color: '#5f5f5c', fontSize: '14px', margin: 0 }}>Targeting 175 lbs for health</p>
           </div>
-          <div className="text-right">
-            <span className="text-3xl font-extrabold text-primary">{currentWeight}</span>
-            <span className="text-secondary font-bold ml-1">lbs</span>
+          <div style={{ textAlign: 'right' }}>
+            <span style={{ fontSize: '30px', fontWeight: 800, color: '#4f645b' }}>{currentWeight}</span>
+            <span style={{ color: '#5f5f5c', fontWeight: 700, marginLeft: '4px' }}>lbs</span>
           </div>
         </div>
 
-        <div className="relative pt-1">
-          <div className="h-4 w-full bg-surface-container-high rounded-full overflow-hidden">
-            <div
-              className="h-full bg-primary-fixed-dim rounded-full transition-all duration-1000 ease-out progress-pulse"
-              style={{ width: `${Math.max(3, progressPercent)}%` }}
-            />
+        <div>
+          <div style={{ height: '16px', width: '100%', background: '#e6e9e3', borderRadius: '9999px', overflow: 'hidden' }}>
+            <div style={{
+              height: '100%', background: '#c3dacf', borderRadius: '9999px',
+              width: `${Math.max(3, progressPercent)}%`,
+              transition: 'width 1s ease-out',
+            }} />
           </div>
-          <div className="flex justify-between mt-2 text-[11px] font-bold text-outline uppercase tracking-tighter">
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '12px', fontSize: '11px', fontWeight: 700, color: '#787c77', textTransform: 'uppercase', letterSpacing: '-0.02em' }}>
             <span>145 lbs</span>
             <span>175 lbs</span>
           </div>
         </div>
 
-        <div className="p-4 rounded-xl flex items-center gap-3" style={{ backgroundColor: 'rgba(209, 232, 221, 0.3)' }}>
-          <span className="material-symbols-outlined text-primary filled">colors_spark</span>
-          <p className="text-on-primary-container text-sm font-medium">
+        <div style={{ padding: '16px', background: 'rgba(209, 232, 221, 0.3)', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <span className="material-symbols-outlined" style={{ color: '#4f645b', fontVariationSettings: "'FILL' 1" }}>colors_spark</span>
+          <p style={{ color: '#42564e', fontSize: '14px', fontWeight: 500, margin: 0 }}>
             Progress is quiet, but it's happening every day.
           </p>
         </div>

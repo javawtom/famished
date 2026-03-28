@@ -12,41 +12,70 @@ export default function AppShell() {
   const location = useLocation()
 
   return (
-    <div className="min-h-screen bg-surface text-on-surface">
+    <div style={{ minHeight: '100dvh', background: '#faf9f5', color: '#2f332f', fontFamily: "'Manrope', sans-serif" }}>
       {/* ===== TOP APP BAR ===== */}
-      <header className="fixed top-0 w-full z-50 flex items-center justify-between px-6 h-16 bg-surface">
-        <div className="flex items-center gap-4">
-          <h1 className="text-lg font-bold tracking-tight text-primary">Fuel Now</h1>
+      <header style={{
+        position: 'fixed', top: 0, width: '100%', zIndex: 50,
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        padding: '0 24px', height: '64px',
+        background: '#faf9f5',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+          <span className="material-symbols-outlined" style={{ color: '#4f645b', padding: '8px', cursor: 'pointer' }}>menu</span>
+          <h1 style={{ fontSize: '18px', fontWeight: 700, letterSpacing: '-0.02em', color: '#4f645b', margin: 0 }}>Fuel Now</h1>
         </div>
-        <div className="h-9 w-9 rounded-full bg-surface-container-high flex items-center justify-center text-primary font-bold text-sm">
+        <div style={{
+          height: '40px', width: '40px', borderRadius: '50%',
+          background: '#d1e8dd', border: '2px solid #d1e8dd',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          color: '#4f645b', fontWeight: 700, fontSize: '14px',
+        }}>
           J
         </div>
       </header>
 
       {/* ===== MAIN CONTENT ===== */}
-      <main className="pt-20 pb-28 px-5 max-w-2xl mx-auto">
+      <main style={{ paddingTop: '88px', paddingBottom: '120px', paddingLeft: '24px', paddingRight: '24px', maxWidth: '672px', margin: '0 auto' }}>
         <Outlet />
       </main>
 
       {/* ===== BOTTOM NAV BAR ===== */}
-      <nav className="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-4 pb-6 pt-3 glass rounded-t-3xl"
-           style={{ boxShadow: 'var(--shadow-botanical-up)', borderTop: '1px solid rgba(175, 179, 173, 0.15)' }}>
+      <nav style={{
+        position: 'fixed', bottom: 0, left: 0, width: '100%', zIndex: 50,
+        display: 'flex', justifyContent: 'space-around', alignItems: 'center',
+        padding: '12px 16px 24px',
+        background: 'rgba(255,255,255,0.88)',
+        backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)',
+        borderTop: '1px solid rgba(175,179,173,0.15)',
+        boxShadow: '0 -12px 32px rgba(47,51,47,0.05)',
+        borderRadius: '24px 24px 0 0',
+      }}>
         {navItems.map((item) => {
           const isActive = location.pathname === item.path
           return (
             <NavLink
               key={item.path}
               to={item.path}
-              className={`flex flex-col items-center justify-center px-5 py-2 rounded-2xl transition-all duration-300 ${
-                isActive
-                  ? 'bg-surface-container-highest text-primary -translate-y-0.5'
-                  : 'text-secondary hover:text-primary'
-              }`}
+              style={{
+                display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                padding: '8px 20px', borderRadius: '16px',
+                textDecoration: 'none',
+                background: isActive ? '#e0e4dd' : 'transparent',
+                color: isActive ? '#4f645b' : '#5f5f5c',
+                transform: isActive ? 'translateY(-2px)' : 'none',
+                transition: 'all 0.3s ease',
+              }}
             >
-              <span className={`material-symbols-outlined text-xl ${isActive ? 'filled' : ''}`}>
+              <span
+                className="material-symbols-outlined"
+                style={{
+                  fontSize: '24px',
+                  fontVariationSettings: isActive ? "'FILL' 1, 'wght' 400" : "'FILL' 0, 'wght' 400",
+                }}
+              >
                 {item.icon}
               </span>
-              <span className="text-[11px] font-medium tracking-wide mt-0.5">{item.label}</span>
+              <span style={{ fontSize: '11px', fontWeight: 500, letterSpacing: '0.04em', marginTop: '2px' }}>{item.label}</span>
             </NavLink>
           )
         })}

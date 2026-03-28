@@ -10,23 +10,22 @@ export default function ProgressPage() {
   const totalGained = currentWeight - 145
   const progressPercent = Math.min(100, Math.round(((currentWeight - 145) / (175 - 145)) * 100))
 
-  // Build chart data from weight log (last 8 entries or pad with empty)
-  const chartData = []
+  // Chart data from weight log (last 7 entries)
   const monthLabels = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC']
-  const recentLog = weightLog.slice(-8)
-
-  for (let i = 0; i < 8; i++) {
+  const recentLog = weightLog.slice(-7)
+  const chartData = []
+  for (let i = 0; i < 7; i++) {
     if (i < recentLog.length) {
       const entry = recentLog[i]
       const date = new Date(entry.date)
       chartData.push({
         label: monthLabels[date.getMonth()],
         weight: entry.weight,
-        height: ((entry.weight - 140) / (180 - 140)) * 100,
+        height: Math.max(15, ((entry.weight - 140) / (180 - 140)) * 100),
         isLatest: i === recentLog.length - 1,
       })
     } else {
-      chartData.push({ label: '', weight: 0, height: 5, isLatest: false, empty: true })
+      chartData.push({ label: '', weight: 0, height: 12, empty: true })
     }
   }
 
@@ -40,92 +39,96 @@ export default function ProgressPage() {
   }
 
   return (
-    <div className="space-y-12 animate-fade-up">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '40px' }}>
       {/* ===== EDITORIAL HEADER ===== */}
       <section>
-        <p className="text-primary font-bold text-sm tracking-widest uppercase mb-3">Progress Overview</p>
-        <h2 className="text-4xl font-extrabold text-on-surface leading-tight tracking-tight">
-          Nurturing your <span className="text-primary italic">steady growth</span>.
+        <p style={{ color: '#4f645b', fontWeight: 700, fontSize: '11px', letterSpacing: '0.12em', textTransform: 'uppercase', margin: '0 0 12px' }}>Progress Overview</p>
+        <h2 style={{ fontSize: '36px', fontWeight: 800, color: '#2f332f', lineHeight: 1.15, margin: 0, letterSpacing: '-0.02em' }}>
+          Nurturing your <span style={{ color: '#4f645b', fontStyle: 'italic' }}>steady growth</span>.
         </h2>
       </section>
 
-      {/* ===== WEIGHT CHART ===== */}
-      <section className="bg-surface-container-lowest p-7 rounded-[2rem] botanical-shadow">
-        <div className="flex justify-between items-start mb-10">
+      {/* ===== WEIGHT CHART CARD ===== */}
+      <section style={{
+        background: '#ffffff', padding: '32px', borderRadius: '2rem',
+        boxShadow: '0 12px 32px rgba(47, 51, 47, 0.08)',
+      }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '40px' }}>
           <div>
-            <p className="text-secondary text-sm font-medium mb-1">Current Weight</p>
-            <h3 className="text-3xl font-bold text-on-surface">
-              {currentWeight} <span className="text-lg font-normal text-secondary-dim">lbs</span>
+            <p style={{ color: '#5f5f5c', fontSize: '14px', fontWeight: 500, margin: '0 0 4px' }}>Current Weight</p>
+            <h3 style={{ fontSize: '32px', fontWeight: 700, color: '#2f332f', margin: 0 }}>
+              {currentWeight} <span style={{ fontSize: '18px', fontWeight: 400, color: '#535351' }}>lbs</span>
             </h3>
           </div>
-          <div className="text-right">
-            <p className="text-secondary text-sm font-medium mb-1">Target</p>
-            <h3 className="text-xl font-bold text-primary">175.0 lbs</h3>
+          <div style={{ textAlign: 'right' }}>
+            <p style={{ color: '#5f5f5c', fontSize: '14px', fontWeight: 500, margin: '0 0 4px' }}>Target</p>
+            <h3 style={{ fontSize: '20px', fontWeight: 700, color: '#4f645b', margin: 0 }}>175.0 lbs</h3>
           </div>
         </div>
 
         {/* Bar Chart */}
-        <div className="h-40 flex items-end gap-2 relative mb-4">
-          <div className="absolute top-0 w-full border-t border-dashed border-outline-variant/30 text-[10px] text-outline tracking-widest pt-1">
+        <div style={{ height: '160px', display: 'flex', alignItems: 'flex-end', gap: '8px', position: 'relative', marginBottom: '8px' }}>
+          <div style={{
+            position: 'absolute', top: 0, width: '100%', borderTop: '1px dashed rgba(175,179,173,0.3)',
+            fontSize: '10px', color: '#787c77', letterSpacing: '0.1em', paddingTop: '4px',
+          }}>
             GOAL: 175 LBS
           </div>
           {chartData.map((bar, i) => (
             <div
               key={i}
-              className={`flex-1 rounded-t-xl transition-all duration-700 ${
-                bar.empty
-                  ? 'bg-surface-container opacity-20'
-                  : bar.isLatest
-                    ? 'bg-primary botanical-shadow'
-                    : 'bg-primary/20'
-              }`}
               style={{
+                flex: 1, borderRadius: '8px 8px 0 0',
                 height: `${bar.height}%`,
-                opacity: bar.empty ? 0.2 : (0.3 + (i / chartData.length) * 0.7),
+                background: bar.empty ? '#edefe9' : bar.isLatest ? '#4f645b' : 'rgba(79, 100, 91, 0.2)',
+                boxShadow: bar.isLatest ? '0 4px 12px rgba(79,100,91,0.2)' : 'none',
+                transition: 'all 0.7s ease',
+                opacity: bar.empty ? 0.3 : 1,
               }}
             />
           ))}
         </div>
 
-        <div className="flex justify-between text-[11px] text-outline font-bold tracking-widest px-1">
+        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', fontWeight: 700, color: '#787c77', letterSpacing: '0.08em', padding: '0 4px' }}>
           {chartData.map((bar, i) => (
-            <span key={i} className={bar.isLatest ? 'text-primary' : ''}>
+            <span key={i} style={{ flex: 1, textAlign: 'center', color: bar.isLatest ? '#4f645b' : undefined }}>
               {bar.isLatest ? 'TODAY' : bar.label}
             </span>
           ))}
         </div>
 
-        {/* Log Weight Button */}
-        <div className="mt-6">
+        {/* Log Weight */}
+        <div style={{ marginTop: '24px' }}>
           {showWeightInput ? (
-            <div className="flex gap-3">
+            <div style={{ display: 'flex', gap: '12px' }}>
               <input
                 type="number"
                 value={weightInput}
                 onChange={(e) => setWeightInput(e.target.value)}
                 placeholder="Enter weight..."
-                className="flex-1 bg-surface-container rounded-xl px-4 py-3 text-on-surface font-medium text-sm outline-none focus:ring-2 focus:ring-primary/30"
                 autoFocus
                 onKeyDown={(e) => e.key === 'Enter' && handleLogWeight()}
+                style={{
+                  flex: 1, background: '#edefe9', border: 'none', borderRadius: '12px',
+                  padding: '14px 16px', fontFamily: "'Manrope', sans-serif",
+                  fontSize: '15px', color: '#2f332f', outline: 'none',
+                }}
               />
-              <button
-                onClick={handleLogWeight}
-                className="bg-primary text-on-primary px-6 py-3 rounded-xl font-bold text-sm active:scale-95 transition-transform"
-              >
-                Log
-              </button>
-              <button
-                onClick={() => setShowWeightInput(false)}
-                className="bg-surface-container-high text-on-surface px-4 py-3 rounded-xl font-bold text-sm"
-              >
-                ✕
-              </button>
+              <button onClick={handleLogWeight} style={{
+                background: '#4f645b', color: '#e7fef3', border: 'none', borderRadius: '12px',
+                padding: '14px 24px', fontFamily: "'Manrope', sans-serif", fontWeight: 700, fontSize: '14px', cursor: 'pointer',
+              }}>Log</button>
+              <button onClick={() => setShowWeightInput(false)} style={{
+                background: '#e6e9e3', color: '#2f332f', border: 'none', borderRadius: '12px',
+                padding: '14px 16px', fontFamily: "'Manrope', sans-serif", fontWeight: 700, cursor: 'pointer',
+              }}>✕</button>
             </div>
           ) : (
-            <button
-              onClick={() => setShowWeightInput(true)}
-              className="w-full py-3 rounded-full bg-surface-container-high text-on-surface font-bold text-sm hover:bg-surface-container-highest transition-colors active:scale-95"
-            >
+            <button onClick={() => setShowWeightInput(true)} style={{
+              width: '100%', padding: '14px', borderRadius: '9999px', border: 'none',
+              background: '#e6e9e3', color: '#2f332f', fontFamily: "'Manrope', sans-serif",
+              fontWeight: 700, fontSize: '14px', cursor: 'pointer',
+            }}>
               Log Today's Weight
             </button>
           )}
@@ -133,55 +136,54 @@ export default function ProgressPage() {
       </section>
 
       {/* ===== STATS CARDS ===== */}
-      <div className="grid grid-cols-2 gap-4">
-        <div className="bg-surface-container-low p-6 rounded-[2rem] flex flex-col gap-4">
-          <span className="material-symbols-outlined text-primary text-2xl">trending_up</span>
-          <div>
-            <p className="text-2xl font-bold text-on-surface">
-              +{totalGained.toFixed(1)} <span className="text-xs font-medium">lbs</span>
-            </p>
-            <p className="text-secondary text-[10px] uppercase tracking-widest font-bold mt-1">Total Gained</p>
-          </div>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+        <div style={{ background: '#f3f4ef', padding: '24px', borderRadius: '2rem' }}>
+          <span className="material-symbols-outlined" style={{ color: '#4f645b', fontSize: '28px', display: 'block', marginBottom: '16px' }}>trending_up</span>
+          <p style={{ fontSize: '24px', fontWeight: 700, color: '#2f332f', margin: '0 0 4px' }}>
+            +{totalGained.toFixed(1)} <span style={{ fontSize: '14px', fontWeight: 500 }}>lbs</span>
+          </p>
+          <p style={{ fontSize: '10px', fontWeight: 700, color: '#5f5f5c', textTransform: 'uppercase', letterSpacing: '0.12em', margin: 0 }}>Total Gained</p>
         </div>
-        <div className="bg-primary-container p-6 rounded-[2rem] flex flex-col gap-4">
-          <span className="material-symbols-outlined text-on-primary-container text-2xl">calendar_today</span>
-          <div>
-            <p className="text-2xl font-bold text-on-primary-container">
-              {streakDays} <span className="text-xs font-medium">days</span>
-            </p>
-            <p className="text-on-primary-container/70 text-[10px] uppercase tracking-widest font-bold mt-1">Consistent Routine</p>
-          </div>
+        <div style={{ background: '#d1e8dd', padding: '24px', borderRadius: '2rem' }}>
+          <span className="material-symbols-outlined" style={{ color: '#42564e', fontSize: '28px', display: 'block', marginBottom: '16px' }}>calendar_today</span>
+          <p style={{ fontSize: '24px', fontWeight: 700, color: '#42564e', margin: '0 0 4px' }}>
+            {streakDays} <span style={{ fontSize: '14px', fontWeight: 500 }}>days</span>
+          </p>
+          <p style={{ fontSize: '10px', fontWeight: 700, color: 'rgba(66,86,78,0.7)', textTransform: 'uppercase', letterSpacing: '0.12em', margin: 0 }}>Consistent Routine</p>
         </div>
       </div>
 
       {/* ===== DAILY FUELING SCHEDULE ===== */}
-      <section className="space-y-6">
-        <div>
-          <h3 className="text-2xl font-bold text-on-surface tracking-tight">Daily Fueling Schedule</h3>
-          <p className="text-secondary text-sm mt-1">Small, frequent nourishment to sustain your energy.</p>
+      <section>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '24px' }}>
+          <div>
+            <h3 style={{ fontSize: '24px', fontWeight: 700, color: '#2f332f', margin: '0 0 4px' }}>Daily Fueling Schedule</h3>
+            <p style={{ color: '#5f5f5c', fontSize: '14px', margin: 0 }}>Small, frequent nourishment to sustain your energy.</p>
+          </div>
         </div>
 
-        <div className="space-y-0">
+        <div>
           {schedule.map((slot, index) => (
-            <div key={slot.id} className="flex gap-5">
-              <div className="flex flex-col items-center gap-2">
-                <div className={`w-11 h-11 rounded-2xl flex items-center justify-center ${
-                  index === 0 ? 'bg-primary-container text-on-primary-container' : 'bg-surface-container-highest text-primary'
-                }`}>
-                  <span className="material-symbols-outlined">{slot.icon}</span>
+            <div key={slot.id} style={{ display: 'flex', gap: '20px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
+                <div style={{
+                  width: '44px', height: '44px', borderRadius: '16px',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  background: index === 0 ? '#d1e8dd' : '#e0e4dd',
+                  color: index === 0 ? '#42564e' : '#4f645b',
+                }}>
+                  <span className="material-symbols-outlined" style={{ fontSize: '22px' }}>{slot.icon}</span>
                 </div>
                 {index < schedule.length - 1 && (
-                  <div className="w-0.5 flex-1 bg-surface-container rounded-full min-h-[3rem]" />
+                  <div style={{ width: '2px', flex: 1, background: '#edefe9', borderRadius: '2px', minHeight: '48px' }} />
                 )}
               </div>
-              <div className="pt-1 pb-8">
-                <p className={`font-bold text-sm tracking-widest uppercase ${
-                  index === 0 ? 'text-primary' : 'text-secondary'
-                }`}>
+              <div style={{ paddingTop: '4px', paddingBottom: '32px' }}>
+                <p style={{ fontWeight: 700, fontSize: '13px', letterSpacing: '0.08em', textTransform: 'uppercase', color: index === 0 ? '#4f645b' : '#5f5f5c', margin: '0 0 4px' }}>
                   {formatTime(slot.time)}
                 </p>
-                <h4 className="text-xl font-bold mt-1 text-on-surface">{slot.label}</h4>
-                <p className="text-secondary text-sm mt-2 leading-relaxed">{slot.description}</p>
+                <h4 style={{ fontSize: '20px', fontWeight: 700, color: '#2f332f', margin: '0 0 8px' }}>{slot.label}</h4>
+                <p style={{ color: '#5f5f5c', fontSize: '14px', lineHeight: 1.6, margin: 0 }}>{slot.description}</p>
               </div>
             </div>
           ))}
@@ -189,15 +191,17 @@ export default function ProgressPage() {
       </section>
 
       {/* ===== MOTIVATIONAL QUOTE ===== */}
-      <section className="bg-surface-container-low p-10 rounded-[2.5rem] text-center">
-        <span className="material-symbols-outlined text-primary/40 text-3xl mb-4 block">format_quote</span>
-        <p className="text-lg font-medium text-on-surface leading-relaxed italic">
+      <section style={{
+        background: '#f3f4ef', padding: '40px', borderRadius: '2.5rem', textAlign: 'center',
+      }}>
+        <span className="material-symbols-outlined" style={{ color: 'rgba(79,100,91,0.4)', fontSize: '32px', marginBottom: '16px', display: 'block' }}>format_quote</span>
+        <p style={{ fontSize: '18px', fontWeight: 500, color: '#2f332f', lineHeight: 1.6, fontStyle: 'italic', margin: '0 0 24px' }}>
           "Progress is not about perfection, but about showing up for yourself, one small bite at a time."
         </p>
-        <div className="mt-6 flex items-center justify-center gap-4">
-          <div className="w-8 h-0.5 bg-outline-variant/30" />
-          <p className="text-primary font-bold text-xs uppercase tracking-widest">Your Gentle Guide</p>
-          <div className="w-8 h-0.5 bg-outline-variant/30" />
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '16px' }}>
+          <div style={{ width: '32px', height: '1px', background: 'rgba(175,179,173,0.3)' }} />
+          <p style={{ color: '#4f645b', fontWeight: 700, fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.12em', margin: 0 }}>Your Gentle Guide</p>
+          <div style={{ width: '32px', height: '1px', background: 'rgba(175,179,173,0.3)' }} />
         </div>
       </section>
     </div>

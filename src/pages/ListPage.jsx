@@ -16,123 +16,136 @@ export default function ListPage() {
     return groups
   }, [storeItems])
 
-  const totalBudget = getTotalBudget()
-  const storeBudget = useMemo(
-    () => storeItems.reduce((sum, g) => sum + g.cost, 0),
-    [storeItems]
-  )
+  const storeBudget = useMemo(() => storeItems.reduce((sum, g) => sum + g.cost, 0), [storeItems])
   const checkedCount = storeItems.filter(g => checkedGroceries[g.id]).length
   const totalCount = storeItems.length
 
   return (
-    <div className="space-y-8 animate-fade-up">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
       {/* ===== HEADER ===== */}
       <section>
-        <h2 className="text-4xl font-bold tracking-tight text-on-surface mb-2">Master Pantry</h2>
-        <p className="text-secondary text-base leading-relaxed">
+        <h2 style={{ fontSize: '36px', fontWeight: 800, letterSpacing: '-0.02em', color: '#2f332f', margin: '0 0 8px' }}>Master Pantry</h2>
+        <p style={{ color: '#5f5f5c', fontSize: '16px', lineHeight: 1.6 }}>
           Your essential, high-quality fuel list. Curated for nutrient density and minimal decision fatigue.
         </p>
-        <div className="flex items-center gap-3 mt-4 bg-surface-container-low p-2 rounded-full pr-6 w-fit">
-          <div className="bg-primary text-on-primary w-10 h-10 rounded-full flex items-center justify-center">
-            <span className="material-symbols-outlined text-xl">shopping_cart</span>
+
+        {/* Budget Pill */}
+        <div style={{
+          display: 'inline-flex', alignItems: 'center', gap: '12px', marginTop: '16px',
+          background: '#f3f4ef', borderRadius: '9999px', padding: '8px 24px 8px 8px',
+        }}>
+          <div style={{
+            width: '40px', height: '40px', borderRadius: '50%', background: '#4f645b',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}>
+            <span className="material-symbols-outlined" style={{ color: '#e7fef3', fontSize: '20px' }}>shopping_cart</span>
           </div>
           <div>
-            <p className="text-[10px] uppercase tracking-widest font-bold text-secondary">Est. Budget</p>
-            <p className="font-bold text-primary">${totalBudget.toFixed(2)}</p>
+            <p style={{ fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.12em', fontWeight: 700, color: '#5f5f5c', margin: 0 }}>Est. Budget</p>
+            <p style={{ fontWeight: 700, color: '#4f645b', margin: 0, fontSize: '16px' }}>${storeBudget.toFixed(2)}</p>
           </div>
         </div>
       </section>
 
       {/* ===== STORE TOGGLE ===== */}
-      <div className="flex gap-3 overflow-x-auto hide-scrollbar">
+      <div style={{ display: 'flex', gap: '12px', overflowX: 'auto' }}>
         {['A', 'B'].map(store => (
           <button
             key={store}
             onClick={() => setActiveStore(store)}
-            className={`px-7 py-3 rounded-full font-bold whitespace-nowrap transition-all duration-300 ${
-              activeStore === store
-                ? 'bg-primary text-on-primary botanical-shadow'
-                : 'bg-surface-container-high text-on-surface hover:bg-surface-container-highest'
-            }`}
+            style={{
+              padding: '14px 28px', borderRadius: '9999px', border: 'none',
+              fontFamily: "'Manrope', sans-serif", fontWeight: 700, fontSize: '14px',
+              cursor: 'pointer', whiteSpace: 'nowrap', transition: 'all 0.3s ease',
+              background: activeStore === store ? '#4f645b' : '#e6e9e3',
+              color: activeStore === store ? '#e7fef3' : '#2f332f',
+              boxShadow: activeStore === store ? '0 12px 32px rgba(47, 51, 47, 0.08)' : 'none',
+            }}
           >
             Store {store}: {storeNames[store]}
           </button>
         ))}
       </div>
 
-      {/* ===== PROGRESS PILL ===== */}
-      <div className="flex items-center gap-3 text-sm">
-        <div className="flex-1 h-2 bg-surface-container-high rounded-full overflow-hidden">
-          <div
-            className="h-full bg-primary-fixed-dim rounded-full transition-all duration-500"
-            style={{ width: `${totalCount > 0 ? (checkedCount / totalCount) * 100 : 0}%` }}
-          />
+      {/* ===== PROGRESS ===== */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+        <div style={{ flex: 1, height: '8px', background: '#e6e9e3', borderRadius: '9999px', overflow: 'hidden' }}>
+          <div style={{
+            height: '100%', background: '#c3dacf', borderRadius: '9999px',
+            width: `${totalCount > 0 ? (checkedCount / totalCount) * 100 : 0}%`,
+            transition: 'width 0.5s ease',
+          }} />
         </div>
-        <span className="text-secondary font-medium text-xs">{checkedCount}/{totalCount}</span>
+        <span style={{ color: '#5f5f5c', fontWeight: 500, fontSize: '13px' }}>{checkedCount}/{totalCount}</span>
       </div>
 
       {/* ===== CATEGORIZED LISTS ===== */}
-      <div className="space-y-8 stagger-children">
-        {Object.entries(grouped).map(([category, items]) => (
-          <section key={category}>
-            <div className="flex items-center gap-3 mb-5">
-              <span className="material-symbols-outlined text-primary text-2xl">
-                {categoryIcons[category] || 'category'}
-              </span>
-              <h3 className="text-xl font-bold">{category}</h3>
-              <span className="text-sm font-medium text-secondary ml-auto">{items.length} Items</span>
-            </div>
+      {Object.entries(grouped).map(([category, items]) => (
+        <section key={category}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
+            <span className="material-symbols-outlined" style={{ color: '#4f645b', fontSize: '24px' }}>
+              {categoryIcons[category] || 'category'}
+            </span>
+            <h3 style={{ fontSize: '20px', fontWeight: 700, margin: 0 }}>{category}</h3>
+            <span style={{ fontSize: '14px', fontWeight: 500, color: '#5f5f5c', marginLeft: 'auto' }}>{items.length} Items</span>
+          </div>
 
-            <div className="space-y-2">
-              {items.map(item => {
-                const checked = !!checkedGroceries[item.id]
-                return (
-                  <div
-                    key={item.id}
-                    onClick={() => toggleGrocery(item.id)}
-                    className={`group flex items-center justify-between p-4 rounded-2xl cursor-pointer transition-all duration-300 ${
-                      checked
-                        ? 'bg-primary-container/40'
-                        : 'bg-surface-container-lowest hover:bg-surface-container-highest'
-                    }`}
-                  >
-                    <div className="flex items-center gap-4">
-                      <div className={`w-6 h-6 rounded-lg flex items-center justify-center transition-all duration-300 ${
-                        checked
-                          ? 'bg-primary'
-                          : 'border-2 border-outline-variant group-hover:border-primary'
-                      }`}>
-                        {checked && (
-                          <span className="material-symbols-outlined text-on-primary text-sm">check</span>
-                        )}
-                      </div>
-                      <div>
-                        <h4 className={`font-bold text-sm ${checked ? 'line-through text-secondary' : 'text-on-surface'}`}>
-                          {item.name}
-                        </h4>
-                        <p className="text-xs text-secondary">
-                          {item.brand} • ${item.cost.toFixed(2)}
-                        </p>
-                      </div>
-                    </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            {items.map(item => {
+              const checked = !!checkedGroceries[item.id]
+              return (
+                <div
+                  key={item.id}
+                  onClick={() => toggleGrocery(item.id)}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: '16px',
+                    padding: '16px 20px', borderRadius: '16px', cursor: 'pointer',
+                    background: checked ? 'rgba(209, 232, 221, 0.4)' : '#ffffff',
+                    boxShadow: checked ? 'none' : '0 2px 8px rgba(47, 51, 47, 0.04)',
+                    transition: 'all 0.3s ease',
+                  }}
+                >
+                  {/* Checkbox */}
+                  <div style={{
+                    width: '24px', height: '24px', borderRadius: '8px', flexShrink: 0,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    background: checked ? '#4f645b' : 'transparent',
+                    border: checked ? 'none' : '2px solid #afb3ad',
+                    transition: 'all 0.3s ease',
+                  }}>
+                    {checked && <span className="material-symbols-outlined" style={{ color: '#e7fef3', fontSize: '16px' }}>check</span>}
                   </div>
-                )
-              })}
-            </div>
-          </section>
-        ))}
-      </div>
 
-      {/* ===== RESET BUTTON ===== */}
+                  {/* Item Info */}
+                  <div style={{ flex: 1 }}>
+                    <h4 style={{
+                      fontWeight: 700, fontSize: '15px', margin: '0 0 2px',
+                      color: checked ? '#5f5f5c' : '#2f332f',
+                      textDecoration: checked ? 'line-through' : 'none',
+                    }}>{item.name}</h4>
+                    <p style={{ fontSize: '13px', color: '#787c77', margin: 0 }}>
+                      {item.brand} • ${item.cost.toFixed(2)}
+                    </p>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </section>
+      ))}
+
+      {/* ===== RESET ===== */}
       {checkedCount > 0 && (
-        <div className="pt-4 pb-4">
-          <button
-            onClick={resetGroceryList}
-            className="w-full py-4 rounded-full bg-surface-container-high text-on-surface font-bold transition-all active:scale-95"
-          >
-            Reset Shopping List
-          </button>
-        </div>
+        <button
+          onClick={resetGroceryList}
+          style={{
+            width: '100%', padding: '16px', borderRadius: '9999px', border: 'none',
+            background: '#e6e9e3', color: '#2f332f', fontFamily: "'Manrope', sans-serif",
+            fontWeight: 700, fontSize: '15px', cursor: 'pointer',
+          }}
+        >
+          Reset Shopping List
+        </button>
       )}
     </div>
   )
