@@ -6,10 +6,18 @@ export default function useWithings() {
   const [latest, setLatest] = useState(null)
   const [syncing, setSyncing] = useState(false)
 
-  // Check connection status on mount
+  // Check connection status on mount + auto-refresh every 60s when connected
   useEffect(() => {
     checkStatus()
-  }, [])
+
+    const interval = setInterval(() => {
+      if (status.connected) {
+        fetchMeasurements()
+      }
+    }, 60000)
+
+    return () => clearInterval(interval)
+  }, [status.connected])
 
   const checkStatus = useCallback(async () => {
     try {
