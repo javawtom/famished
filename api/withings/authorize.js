@@ -1,4 +1,4 @@
-import { getConfig } from './_withings.js'
+import { getConfig } from '../_withings.js'
 
 export default function handler(req, res) {
   const { CLIENT_ID, REDIRECT_URI } = getConfig()
