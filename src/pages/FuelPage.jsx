@@ -1,39 +1,49 @@
 import { useState, useMemo } from 'react'
 import { useApp } from '../context/AppContext'
-import { getCurrentMealPeriod, formatTime } from '../data/schedule'
+import { getCurrentMealPeriod } from '../data/schedule'
 import { getHealthyMeals, getQuickMeals } from '../data/meals'
+import useCardRanking from '../hooks/useCardRanking'
+
+const MAX_SWAPS = 3
 
 export default function FuelPage() {
-  const { currentWeight, targetWeight, markEaten, unmarkEaten, isMealEaten } = useApp()
+  const { markEaten, unmarkEaten, isMealEaten } = useApp()
   const mealPeriod = getCurrentMealPeriod()
+  const ranking = useCardRanking()
 
   // Get all healthy and quick meals for current meal type
   const mealType = mealPeriod.mealType === 'snack' || mealPeriod.mealType === 'latenight'
     ? 'dinner' : mealPeriod.mealType
-  const healthyPool = useMemo(() => getHealthyMeals(mealType), [mealType])
-  const quickPool = useMemo(() => getQuickMeals(mealType), [mealType])
+  const mealPeriodKey = `${mealType}-${mealPeriod.mealType}`
+
+  // Rank and filter pools (removes discarded cards, sorts by score)
+  const healthyPool = useMemo(() => ranking.rankPool(getHealthyMeals(mealType)), [mealType, ranking.scores])
+  const quickPool = useMemo(() => ranking.rankPool(getQuickMeals(mealType)), [mealType, ranking.scores])
 
   // Flashcard index for cycling
-  const [healthyIndex, setHealthyIndex] = useState(() => {
-    return new Date().getDay() % Math.max(1, healthyPool.length)
-  })
-  const [quickIndex, setQuickIndex] = useState(() => {
-    return new Date().getDay() % Math.max(1, quickPool.length)
-  })
+  const [healthyIndex, setHealthyIndex] = useState(0)
+  const [quickIndex, setQuickIndex] = useState(0)
 
-  const healthyOption = healthyPool[healthyIndex % healthyPool.length]
-  const quickOption = quickPool[quickIndex % quickPool.length]
+  const healthyOption = healthyPool.length > 0 ? healthyPool[healthyIndex % healthyPool.length] : null
+  const quickOption = quickPool.length > 0 ? quickPool[quickIndex % quickPool.length] : null
 
   const eaten = isMealEaten(mealPeriod.mealType)
   const [justAte, setJustAte] = useState(false)
-  const [expandedMeal, setExpandedMeal] = useState(null) // 'healthy' | 'quick' | null
-  const [chosenMeal, setChosenMeal] = useState(null) // which side was tapped
+  const [expandedMeal, setExpandedMeal] = useState(null)
+  const [chosenMeal, setChosenMeal] = useState(null)
+
+  // Swap tracking
+  const swapsUsed = ranking.getSwapsUsed(mealPeriodKey)
+  const swapsLeft = MAX_SWAPS - swapsUsed
+  const canSwap = swapsLeft > 0
 
   const handleChoose = (side) => {
     if (eaten) {
       unmarkEaten(mealPeriod.mealType)
       setChosenMeal(null)
     } else {
+      const chosenId = side === 'healthy' ? healthyOption?.id : quickOption?.id
+      if (chosenId) ranking.recordChoose(chosenId)
       markEaten(mealPeriod.mealType)
       setChosenMeal(side)
       setJustAte(true)
@@ -43,12 +53,18 @@ export default function FuelPage() {
 
   const cycleHealthy = (e) => {
     e.stopPropagation()
+    if (!canSwap || healthyPool.length <= 1) return
+    // Record swap penalty on the card being dismissed
+    if (healthyOption) ranking.recordSwap(healthyOption.id, mealPeriodKey)
     setHealthyIndex(i => (i + 1) % healthyPool.length)
     setExpandedMeal(null)
   }
 
   const cycleQuick = (e) => {
     e.stopPropagation()
+    if (!canSwap || quickPool.length <= 1) return
+    // Record swap penalty on the card being dismissed
+    if (quickOption) ranking.recordSwap(quickOption.id, mealPeriodKey)
     setQuickIndex(i => (i + 1) % quickPool.length)
     setExpandedMeal(null)
   }
@@ -57,6 +73,20 @@ export default function FuelPage() {
   const mealLabel = mealPeriod.mealType === 'latenight' ? 'a late-night snack'
     : mealPeriod.mealType === 'snack' ? 'a snack'
     : mealPeriod.label.toLowerCase()
+
+  // Render a card tier badge if the meal has a tier
+  const renderTierBadge = (mealId) => {
+    const tier = ranking.getTier(mealId)
+    if (!tier) return null
+    return (
+      <span style={{
+        display: 'inline-block', padding: '2px 8px', borderRadius: '9999px',
+        fontSize: '9px', fontWeight: 700, letterSpacing: '0.06em',
+        background: `${tier.color}15`, color: tier.color,
+        marginLeft: '6px',
+      }}>{tier.label}</span>
+    )
+  }
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
@@ -70,6 +100,23 @@ export default function FuelPage() {
           It's time for {mealLabel}. Choose what feels right.
         </p>
       </section>
+
+      {/* ===== SWAP COUNTER ===== */}
+      <div style={{ textAlign: 'center', display: 'flex', justifyContent: 'center', gap: '6px' }}>
+        {[...Array(MAX_SWAPS)].map((_, i) => (
+          <div key={i} style={{
+            width: '8px', height: '8px', borderRadius: '50%',
+            background: i < swapsLeft ? '#4f645b' : '#e0e4dd',
+            transition: 'background 0.3s ease',
+          }} />
+        ))}
+        <span style={{
+          fontSize: '11px', fontWeight: 600, color: canSwap ? '#787c77' : '#a73b21',
+          marginLeft: '8px',
+        }}>
+          {canSwap ? `${swapsLeft} swap${swapsLeft === 1 ? '' : 's'} left` : "You're stuck with these!"}
+        </span>
+      </div>
 
       {/* ===== FLASHCARD GRID ===== */}
       <section style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
@@ -98,12 +145,15 @@ export default function FuelPage() {
               />
             </div>
             <div style={{ padding: '0 4px' }}>
-              <span style={{
-                display: 'inline-block', padding: '3px 10px', borderRadius: '9999px',
-                fontSize: '10px', fontWeight: 700, textTransform: 'uppercase',
-                letterSpacing: '0.08em', marginBottom: '6px',
-                background: 'rgba(79, 100, 91, 0.1)', color: '#4f645b',
-              }}>Healthy</span>
+              <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', marginBottom: '6px' }}>
+                <span style={{
+                  display: 'inline-block', padding: '3px 10px', borderRadius: '9999px',
+                  fontSize: '10px', fontWeight: 700, textTransform: 'uppercase',
+                  letterSpacing: '0.08em',
+                  background: 'rgba(79, 100, 91, 0.1)', color: '#4f645b',
+                }}>Healthy</span>
+                {renderTierBadge(healthyOption.id)}
+              </div>
               <h3 style={{
                 fontSize: '17px', fontWeight: 700, color: '#2f332f',
                 lineHeight: 1.2, margin: '0 0 4px',
@@ -112,11 +162,9 @@ export default function FuelPage() {
                 color: '#5f5f5c', fontSize: '12px', lineHeight: 1.5,
                 margin: '0 0 10px',
               }}>{healthyOption.description}</p>
-              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                <span style={{
-                  fontSize: '11px', fontWeight: 600, color: '#787c77',
-                }}>{healthyOption.prepTime}</span>
-              </div>
+              <span style={{ fontSize: '11px', fontWeight: 600, color: '#787c77' }}>
+                {healthyOption.prepTime}
+              </span>
             </div>
 
             {/* Expanded Steps */}
@@ -153,11 +201,19 @@ export default function FuelPage() {
 
             {/* Cycle Arrow */}
             {healthyPool.length > 1 && (
-              <button onClick={cycleHealthy} style={{
-                alignSelf: 'center', marginTop: '8px', background: 'none', border: 'none',
-                cursor: 'pointer', padding: '4px',
-              }}>
-                <span className="material-symbols-outlined" style={{ fontSize: '18px', color: '#afb3ad' }}>swap_horiz</span>
+              <button
+                onClick={cycleHealthy}
+                disabled={!canSwap}
+                style={{
+                  alignSelf: 'center', marginTop: '8px', background: 'none', border: 'none',
+                  cursor: canSwap ? 'pointer' : 'not-allowed', padding: '4px',
+                  opacity: canSwap ? 1 : 0.3,
+                  transition: 'opacity 0.3s ease',
+                }}
+              >
+                <span className="material-symbols-outlined" style={{
+                  fontSize: '18px', color: canSwap ? '#afb3ad' : '#e0e4dd',
+                }}>swap_horiz</span>
               </button>
             )}
           </div>
@@ -188,12 +244,15 @@ export default function FuelPage() {
               />
             </div>
             <div style={{ padding: '0 4px' }}>
-              <span style={{
-                display: 'inline-block', padding: '3px 10px', borderRadius: '9999px',
-                fontSize: '10px', fontWeight: 700, textTransform: 'uppercase',
-                letterSpacing: '0.08em', marginBottom: '6px',
-                background: 'rgba(105, 93, 82, 0.1)', color: '#695d52',
-              }}>Quick</span>
+              <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', marginBottom: '6px' }}>
+                <span style={{
+                  display: 'inline-block', padding: '3px 10px', borderRadius: '9999px',
+                  fontSize: '10px', fontWeight: 700, textTransform: 'uppercase',
+                  letterSpacing: '0.08em',
+                  background: 'rgba(105, 93, 82, 0.1)', color: '#695d52',
+                }}>Quick</span>
+                {renderTierBadge(quickOption.id)}
+              </div>
               <h3 style={{
                 fontSize: '17px', fontWeight: 700, color: '#2f332f',
                 lineHeight: 1.2, margin: '0 0 4px',
@@ -202,11 +261,9 @@ export default function FuelPage() {
                 color: '#5f5f5c', fontSize: '12px', lineHeight: 1.5,
                 margin: '0 0 10px',
               }}>{quickOption.description}</p>
-              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                <span style={{
-                  fontSize: '11px', fontWeight: 600, color: '#787c77',
-                }}>{quickOption.prepTime}</span>
-              </div>
+              <span style={{ fontSize: '11px', fontWeight: 600, color: '#787c77' }}>
+                {quickOption.prepTime}
+              </span>
             </div>
 
             {/* Expanded Steps */}
@@ -243,11 +300,19 @@ export default function FuelPage() {
 
             {/* Cycle Arrow */}
             {quickPool.length > 1 && (
-              <button onClick={cycleQuick} style={{
-                alignSelf: 'center', marginTop: '8px', background: 'none', border: 'none',
-                cursor: 'pointer', padding: '4px',
-              }}>
-                <span className="material-symbols-outlined" style={{ fontSize: '18px', color: '#afb3ad' }}>swap_horiz</span>
+              <button
+                onClick={cycleQuick}
+                disabled={!canSwap}
+                style={{
+                  alignSelf: 'center', marginTop: '8px', background: 'none', border: 'none',
+                  cursor: canSwap ? 'pointer' : 'not-allowed', padding: '4px',
+                  opacity: canSwap ? 1 : 0.3,
+                  transition: 'opacity 0.3s ease',
+                }}
+              >
+                <span className="material-symbols-outlined" style={{
+                  fontSize: '18px', color: canSwap ? '#afb3ad' : '#e0e4dd',
+                }}>swap_horiz</span>
               </button>
             )}
           </div>
