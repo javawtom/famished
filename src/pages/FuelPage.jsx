@@ -17,7 +17,7 @@ function getEncouragement() {
 }
 
 export default function FuelPage() {
-  const { currentWeight, markEaten, isMealEaten } = useApp()
+  const { currentWeight, targetWeight, markEaten, unmarkEaten, isMealEaten } = useApp()
   const mealPeriod = getCurrentMealPeriod()
   const encouragement = getEncouragement()
 
@@ -37,13 +37,17 @@ export default function FuelPage() {
 
   const eaten = isMealEaten(mealPeriod.mealType)
   const [justAte, setJustAte] = useState(false)
-  const progressPercent = Math.min(100, Math.round(((currentWeight - 145) / (175 - 145)) * 100))
+  const progressPercent = Math.min(100, Math.round(((currentWeight - 145) / (targetWeight - 145)) * 100))
   const [expandedMeal, setExpandedMeal] = useState(null)
 
   const handleEaten = () => {
-    markEaten(mealPeriod.mealType)
-    setJustAte(true)
-    setTimeout(() => setJustAte(false), 2000)
+    if (eaten) {
+      unmarkEaten(mealPeriod.mealType)
+    } else {
+      markEaten(mealPeriod.mealType)
+      setJustAte(true)
+      setTimeout(() => setJustAte(false), 2000)
+    }
   }
 
   return (
@@ -140,11 +144,11 @@ export default function FuelPage() {
         <div style={{ marginTop: '40px' }}>
           <button
             onClick={handleEaten}
-            disabled={eaten}
+            disabled={justAte}
             style={{
               width: '100%', padding: '20px', borderRadius: '9999px', border: 'none',
               fontFamily: "'Manrope', sans-serif", fontWeight: 700, fontSize: '18px',
-              cursor: eaten ? 'default' : 'pointer',
+              cursor: justAte ? 'default' : 'pointer',
               background: eaten || justAte
                 ? '#d1e8dd'
                 : 'linear-gradient(to right, #4f645b, #43574f)',
@@ -153,7 +157,7 @@ export default function FuelPage() {
               transition: 'all 0.3s ease',
             }}
           >
-            {eaten ? '\u2713 You\u2019ve fueled up' : justAte ? '\u2713 Logged!' : "I've Eaten"}
+            {eaten ? '✕ Unmark meal' : justAte ? '\u2713 Logged!' : "I've Eaten"}
           </button>
         </div>
       </section>
@@ -166,7 +170,7 @@ export default function FuelPage() {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
           <div>
             <h4 style={{ fontSize: '20px', fontWeight: 700, color: '#2f332f', margin: '0 0 4px' }}>Your Journey</h4>
-            <p style={{ color: '#5f5f5c', fontSize: '14px', margin: 0 }}>Targeting 175 lbs for health</p>
+            <p style={{ color: '#5f5f5c', fontSize: '14px', margin: 0 }}>Targeting {targetWeight} lbs for health</p>
           </div>
           <div style={{ textAlign: 'right' }}>
             <span style={{ fontSize: '30px', fontWeight: 800, color: '#4f645b' }}>{currentWeight}</span>

@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
 
 const navItems = [
@@ -10,6 +11,7 @@ const navItems = [
 
 export default function AppShell() {
   const location = useLocation()
+  const [menuOpen, setMenuOpen] = useState(false)
 
   return (
     <div style={{ minHeight: '100dvh', background: '#faf9f5', color: '#2f332f', fontFamily: "'Manrope', sans-serif" }}>
@@ -21,7 +23,11 @@ export default function AppShell() {
         background: '#faf9f5',
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-          <span className="material-symbols-outlined" style={{ color: '#4f645b', padding: '8px', cursor: 'pointer' }}>menu</span>
+          <span
+            className="material-symbols-outlined"
+            onClick={() => setMenuOpen(true)}
+            style={{ color: '#4f645b', padding: '8px', cursor: 'pointer' }}
+          >menu</span>
           <h1 style={{ fontSize: '18px', fontWeight: 700, letterSpacing: '-0.02em', color: '#4f645b', margin: 0 }}>Fuel Now</h1>
         </div>
         <div style={{
@@ -33,6 +39,82 @@ export default function AppShell() {
           J
         </div>
       </header>
+
+      {/* ===== SLIDE-OUT MENU ===== */}
+      {menuOpen && (
+        <>
+          {/* Overlay */}
+          <div
+            onClick={() => setMenuOpen(false)}
+            style={{
+              position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+              background: 'rgba(0,0,0,0.3)', zIndex: 100,
+              backdropFilter: 'blur(4px)', WebkitBackdropFilter: 'blur(4px)',
+            }}
+          />
+          {/* Drawer */}
+          <div style={{
+            position: 'fixed', top: 0, left: 0, bottom: 0,
+            width: '280px', background: '#faf9f5', zIndex: 101,
+            padding: '32px 24px', display: 'flex', flexDirection: 'column',
+            boxShadow: '8px 0 32px rgba(0,0,0,0.1)',
+            animation: 'slideIn 0.25s ease-out',
+          }}>
+            {/* Close button */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '40px' }}>
+              <h2 style={{ fontSize: '22px', fontWeight: 800, color: '#4f645b', margin: 0 }}>Famished</h2>
+              <span
+                className="material-symbols-outlined"
+                onClick={() => setMenuOpen(false)}
+                style={{ color: '#5f5f5c', cursor: 'pointer', padding: '4px' }}
+              >close</span>
+            </div>
+
+            {/* Nav links */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+              {navItems.map(item => {
+                const isActive = location.pathname === item.path
+                return (
+                  <NavLink
+                    key={item.path}
+                    to={item.path}
+                    onClick={() => setMenuOpen(false)}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: '16px',
+                      padding: '14px 16px', borderRadius: '12px',
+                      textDecoration: 'none',
+                      background: isActive ? '#e0e4dd' : 'transparent',
+                      color: isActive ? '#4f645b' : '#5f5f5c',
+                      fontWeight: isActive ? 700 : 500,
+                      fontSize: '15px',
+                      transition: 'all 0.2s ease',
+                    }}
+                  >
+                    <span className="material-symbols-outlined" style={{
+                      fontSize: '22px',
+                      fontVariationSettings: isActive ? "'FILL' 1" : "'FILL' 0",
+                    }}>{item.icon}</span>
+                    {item.label}
+                  </NavLink>
+                )
+              })}
+            </div>
+
+            {/* Spacer */}
+            <div style={{ flex: 1 }} />
+
+            {/* Footer info */}
+            <div style={{ padding: '20px 0', borderTop: '1px solid rgba(175,179,173,0.2)' }}>
+              <p style={{ fontSize: '11px', color: '#787c77', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.1em', margin: '0 0 8px' }}>Integrations</p>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
+                <span className="material-symbols-outlined" style={{ color: '#4f645b', fontSize: '18px' }}>monitor_weight</span>
+                <span style={{ fontSize: '13px', color: '#5f5f5c' }}>Withings Scale</span>
+              </div>
+              <p style={{ fontSize: '11px', color: '#a0a49e', margin: '16px 0 0' }}>Famished v1.0 • Built with care</p>
+            </div>
+          </div>
+        </>
+      )}
 
       {/* ===== MAIN CONTENT ===== */}
       <main style={{ paddingTop: '88px', paddingBottom: '120px', paddingLeft: '24px', paddingRight: '24px', maxWidth: '672px', margin: '0 auto' }}>

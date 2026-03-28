@@ -27,6 +27,7 @@ function pickWeeklyRecipes(weekNum) {
 
 export function AppProvider({ children }) {
   const [currentWeight, setCurrentWeight] = useLocalStorage('fn-weight', 145)
+  const [targetWeight, setTargetWeight] = useLocalStorage('fn-targetWeight', 175)
   const [weightLog, setWeightLog] = useLocalStorage('fn-weightLog', [
     { date: '2026-01-01', weight: 145 },
   ])
@@ -48,6 +49,15 @@ export function AppProvider({ children }) {
       ...prev,
       [today]: { ...(prev[today] || {}), [mealType]: true }
     }))
+  }, [setEatenMeals])
+
+  const unmarkEaten = useCallback((mealType) => {
+    const today = new Date().toISOString().split('T')[0]
+    setEatenMeals(prev => {
+      const todayMeals = { ...(prev[today] || {}) }
+      delete todayMeals[mealType]
+      return { ...prev, [today]: todayMeals }
+    })
   }, [setEatenMeals])
 
   const markCooked = useCallback((mealId) => {
@@ -75,6 +85,8 @@ export function AppProvider({ children }) {
 
   const value = {
     currentWeight,
+    targetWeight,
+    setTargetWeight,
     weightLog,
     checkedGroceries,
     eatenMeals,
@@ -83,6 +95,7 @@ export function AppProvider({ children }) {
     weeklyRecipes,
     toggleGrocery,
     markEaten,
+    unmarkEaten,
     markCooked,
     logWeight,
     isMealEaten,

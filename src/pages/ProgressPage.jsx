@@ -3,11 +3,45 @@ import { useApp } from '../context/AppContext'
 import useWithings from '../hooks/useWithings'
 import schedule, { formatTime } from '../data/schedule'
 
+const quotes = [
+  "Progress is not about perfection, but about showing up for yourself, one small bite at a time.",
+  "Your body is listening. Every meal is a message of care.",
+  "Growth happens in the quiet moments between what you were and what you're becoming.",
+  "Nourishing yourself is not a chore — it's an act of self-respect.",
+  "The scale tells one story. Your energy, sleep, and mood tell the rest.",
+  "Small plates, steady gains. You're building something lasting.",
+  "Every pound gained is a promise kept to your future self.",
+  "You don't have to eat perfectly. You just have to eat intentionally.",
+  "Rest days are growth days. Recovery is where strength is built.",
+  "The hardest part is starting. You've already done that.",
+  "Your appetite will grow as you do. Trust the process.",
+  "Consistency isn't glamorous, but it's what separates progress from wishful thinking.",
+  "Food is fuel, not a fight. Let it work for you.",
+  "You are not behind. You are exactly where your body needs you to be.",
+  "One good meal won't fix everything. But a hundred will change your life.",
+  "Strength is built in the kitchen as much as the gym.",
+  "There's no finish line — just a better version of you, every single day.",
+  "Be patient with yourself. Roots grow before branches.",
+  "Your body remembers kindness. Feed it well.",
+  "Every bite is a brick in the foundation of your new self.",
+]
+
+function getDailyQuote() {
+  const now = new Date()
+  const start = new Date(now.getFullYear(), 0, 0)
+  const dayOfYear = Math.floor((now - start) / (1000 * 60 * 60 * 24))
+  return quotes[dayOfYear % quotes.length]
+}
+
 export default function ProgressPage() {
-  const { currentWeight, weightLog, logWeight, streakDays } = useApp()
+  const { currentWeight, targetWeight, setTargetWeight, weightLog, logWeight, streakDays } = useApp()
   const withings = useWithings()
   const [showWeightInput, setShowWeightInput] = useState(false)
   const [weightInput, setWeightInput] = useState('')
+  const [sliderValue, setSliderValue] = useState(targetWeight)
+
+  // Sync slider with stored target
+  useEffect(() => { setSliderValue(targetWeight) }, [targetWeight])
 
   // Auto-sync Withings data into app state
   useEffect(() => {
@@ -19,15 +53,6 @@ export default function ProgressPage() {
     }
   }, [withings.latest])
 
-  // Sync all Withings measurements into weight log
-  useEffect(() => {
-    if (withings.measurements.length > 0) {
-      for (const m of withings.measurements) {
-        // logWeight already deduplicates by date
-      }
-    }
-  }, [withings.measurements])
-
   // Check for ?withings=connected in URL
   useEffect(() => {
     const params = new URLSearchParams(window.location.search)
@@ -37,31 +62,43 @@ export default function ProgressPage() {
   }, [])
 
   const totalGained = currentWeight - 145
+  const quote = getDailyQuote()
 
-  // Chart data
-  const monthLabels = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC']
-
-  // Use Withings data if available, otherwise fallback to manual log
+  // ===== LINE CHART DATA =====
   const chartSource = withings.measurements.length > 0
     ? withings.measurements.map(m => ({ date: m.date, weight: m.weightLbs }))
     : weightLog
 
-  const recentLog = chartSource.slice(-7)
-  const chartData = []
-  for (let i = 0; i < 7; i++) {
-    if (i < recentLog.length) {
-      const entry = recentLog[i]
-      const date = new Date(entry.date)
-      chartData.push({
-        label: monthLabels[date.getMonth()],
-        weight: entry.weight,
-        height: Math.max(15, ((entry.weight - 140) / (180 - 140)) * 100),
-        isLatest: i === recentLog.length - 1,
-      })
-    } else {
-      chartData.push({ label: '', weight: 0, height: 12, empty: true })
-    }
-  }
+  const recentLog = chartSource.slice(-14) // Show last 14 data points
+  const weights = recentLog.map(e => e.weight)
+  const minWeight = Math.min(...weights, targetWeight) - 3
+  const maxWeight = Math.max(...weights, targetWeight) + 3
+  const range = maxWeight - minWeight || 1
+
+  // SVG dimensions
+  const svgW = 600
+  const svgH = 200
+  const padX = 40
+  const padY = 20
+  const chartW = svgW - padX * 2
+  const chartH = svgH - padY * 2
+
+  const points = recentLog.map((entry, i) => {
+    const x = padX + (i / Math.max(recentLog.length - 1, 1)) * chartW
+    const y = padY + chartH - ((entry.weight - minWeight) / range) * chartH
+    return { x, y, ...entry }
+  })
+
+  const linePath = points.length > 1
+    ? points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ')
+    : ''
+
+  const areaPath = linePath
+    ? `${linePath} L ${points[points.length - 1].x} ${padY + chartH} L ${points[0].x} ${padY + chartH} Z`
+    : ''
+
+  // Target weight line Y position
+  const targetY = padY + chartH - ((targetWeight - minWeight) / range) * chartH
 
   const handleLogWeight = () => {
     const w = parseFloat(weightInput)
@@ -70,6 +107,15 @@ export default function ProgressPage() {
       setWeightInput('')
       setShowWeightInput(false)
     }
+  }
+
+  const handleSliderChange = (e) => {
+    const val = parseInt(e.target.value)
+    setSliderValue(val)
+  }
+
+  const handleSliderCommit = () => {
+    setTargetWeight(sliderValue)
   }
 
   return (
@@ -144,12 +190,12 @@ export default function ProgressPage() {
         )}
       </section>
 
-      {/* ===== WEIGHT CHART CARD ===== */}
+      {/* ===== WEIGHT LINE CHART ===== */}
       <section style={{
         background: '#ffffff', padding: '32px', borderRadius: '2rem',
         boxShadow: '0 12px 32px rgba(47, 51, 47, 0.08)',
       }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '40px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '32px' }}>
           <div>
             <p style={{ color: '#5f5f5c', fontSize: '14px', fontWeight: 500, margin: '0 0 4px' }}>Current Weight</p>
             <h3 style={{ fontSize: '32px', fontWeight: 700, color: '#2f332f', margin: 0 }}>
@@ -158,39 +204,83 @@ export default function ProgressPage() {
           </div>
           <div style={{ textAlign: 'right' }}>
             <p style={{ color: '#5f5f5c', fontSize: '14px', fontWeight: 500, margin: '0 0 4px' }}>Target</p>
-            <h3 style={{ fontSize: '20px', fontWeight: 700, color: '#4f645b', margin: 0 }}>175.0 lbs</h3>
+            <h3 style={{ fontSize: '20px', fontWeight: 700, color: '#4f645b', margin: 0 }}>{sliderValue} lbs</h3>
           </div>
         </div>
 
-        {/* Bar Chart */}
-        <div style={{ height: '160px', display: 'flex', alignItems: 'flex-end', gap: '8px', position: 'relative', marginBottom: '8px' }}>
-          <div style={{
-            position: 'absolute', top: 0, width: '100%', borderTop: '1px dashed rgba(175,179,173,0.3)',
-            fontSize: '10px', color: '#787c77', letterSpacing: '0.1em', paddingTop: '4px',
-          }}>
-            GOAL: 175 LBS
-          </div>
-          {chartData.map((bar, i) => (
-            <div
-              key={i}
-              style={{
-                flex: 1, borderRadius: '8px 8px 0 0',
-                height: `${bar.height}%`,
-                background: bar.empty ? '#edefe9' : bar.isLatest ? '#4f645b' : 'rgba(79, 100, 91, 0.2)',
-                boxShadow: bar.isLatest ? '0 4px 12px rgba(79,100,91,0.2)' : 'none',
-                transition: 'all 0.7s ease',
-                opacity: bar.empty ? 0.3 : 1,
-              }}
-            />
-          ))}
+        {/* SVG Line Chart */}
+        <div style={{ width: '100%', overflow: 'hidden' }}>
+          <svg viewBox={`0 0 ${svgW} ${svgH}`} style={{ width: '100%', height: 'auto' }}>
+            {/* Gradient fill under line */}
+            <defs>
+              <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#4f645b" stopOpacity="0.15" />
+                <stop offset="100%" stopColor="#4f645b" stopOpacity="0.02" />
+              </linearGradient>
+            </defs>
+
+            {/* Target weight line */}
+            {targetY >= padY && targetY <= padY + chartH && (
+              <>
+                <line x1={padX} y1={targetY} x2={svgW - padX} y2={targetY}
+                  stroke="#4f645b" strokeWidth="1" strokeDasharray="6 4" opacity="0.4" />
+                <text x={svgW - padX + 4} y={targetY + 4}
+                  fill="#4f645b" fontSize="10" fontWeight="600" fontFamily="Manrope">{sliderValue}</text>
+              </>
+            )}
+
+            {/* Area fill */}
+            {areaPath && <path d={areaPath} fill="url(#areaGrad)" />}
+
+            {/* Line */}
+            {linePath && <path d={linePath} fill="none" stroke="#4f645b" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />}
+
+            {/* Data points */}
+            {points.map((p, i) => (
+              <g key={i}>
+                <circle cx={p.x} cy={p.y} r={i === points.length - 1 ? 6 : 3.5}
+                  fill={i === points.length - 1 ? '#4f645b' : '#a3bfb3'} stroke="#fff" strokeWidth="2" />
+                {/* Show weight label on latest point */}
+                {i === points.length - 1 && (
+                  <text x={p.x} y={p.y - 14} textAnchor="middle"
+                    fill="#4f645b" fontSize="12" fontWeight="700" fontFamily="Manrope">{p.weight}</text>
+                )}
+              </g>
+            ))}
+
+            {/* Date labels */}
+            {points.filter((_, i) => i === 0 || i === points.length - 1 || i === Math.floor(points.length / 2)).map((p, i) => (
+              <text key={i} x={p.x} y={svgH - 2} textAnchor="middle"
+                fill="#787c77" fontSize="9" fontWeight="600" fontFamily="Manrope" letterSpacing="0.05em">
+                {new Date(p.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+              </text>
+            ))}
+          </svg>
         </div>
 
-        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', fontWeight: 700, color: '#787c77', letterSpacing: '0.08em', padding: '0 4px' }}>
-          {chartData.map((bar, i) => (
-            <span key={i} style={{ flex: 1, textAlign: 'center', color: bar.isLatest ? '#4f645b' : undefined }}>
-              {bar.isLatest ? 'TODAY' : bar.label}
-            </span>
-          ))}
+        {/* Target Weight Slider */}
+        <div style={{ marginTop: '24px', padding: '20px', background: '#f3f4ef', borderRadius: '16px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+            <span style={{ fontSize: '13px', fontWeight: 700, color: '#5f5f5c', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Target Weight</span>
+            <span style={{ fontSize: '18px', fontWeight: 700, color: '#4f645b' }}>{sliderValue} lbs</span>
+          </div>
+          <input
+            type="range"
+            min="100" max="250" step="1"
+            value={sliderValue}
+            onChange={handleSliderChange}
+            onMouseUp={handleSliderCommit}
+            onTouchEnd={handleSliderCommit}
+            style={{
+              width: '100%', height: '6px', appearance: 'none', WebkitAppearance: 'none',
+              background: `linear-gradient(to right, #4f645b 0%, #4f645b ${((sliderValue - 100) / 150) * 100}%, #e0e4dd ${((sliderValue - 100) / 150) * 100}%, #e0e4dd 100%)`,
+              borderRadius: '9999px', outline: 'none', cursor: 'pointer',
+            }}
+          />
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '8px', fontSize: '10px', fontWeight: 600, color: '#787c77' }}>
+            <span>100 lbs</span>
+            <span>250 lbs</span>
+          </div>
         </div>
 
         {/* Log Weight (manual fallback) */}
@@ -294,7 +384,7 @@ export default function ProgressPage() {
       }}>
         <span className="material-symbols-outlined" style={{ color: 'rgba(79,100,91,0.4)', fontSize: '32px', marginBottom: '16px', display: 'block' }}>format_quote</span>
         <p style={{ fontSize: '18px', fontWeight: 500, color: '#2f332f', lineHeight: 1.6, fontStyle: 'italic', margin: '0 0 24px' }}>
-          "Progress is not about perfection, but about showing up for yourself, one small bite at a time."
+          "{quote}"
         </p>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '16px' }}>
           <div style={{ width: '32px', height: '1px', background: 'rgba(175,179,173,0.3)' }} />
