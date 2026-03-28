@@ -69,12 +69,15 @@
   --color-inverse-surface: #0d0f0d;
   --color-inverse-on-surface: #9c9d9a;
 
-  /* ---- Typography ---- */
-  --font-family-headline: 'Manrope', sans-serif;
-  --font-family-body: 'Manrope', sans-serif;
-  --font-family-label: 'Manrope', sans-serif;
+  /* ---- Font ---- */
+  --font-sans: 'Manrope', sans-serif;
+}
 
-  /* ---- Shadows (Botanical) ---- */
+/* ============================================
+   SHADOW & VARIABLE TOKENS (outside @theme)
+   ============================================ */
+
+:root {
   --shadow-botanical: 0 12px 32px rgba(47, 51, 47, 0.08);
   --shadow-botanical-lg: 0 32px 64px rgba(79, 100, 91, 0.1);
   --shadow-botanical-up: 0 -12px 32px rgba(47, 51, 47, 0.05);
@@ -122,11 +125,11 @@ body {
    ============================================ */
 
 .botanical-shadow {
-  box-shadow: var(--shadow-botanical);
+  box-shadow: 0 12px 32px rgba(47, 51, 47, 0.08);
 }
 
 .botanical-shadow-lg {
-  box-shadow: var(--shadow-botanical-lg);
+  box-shadow: 0 32px 64px rgba(79, 100, 91, 0.1);
 }
 
 .hide-scrollbar::-webkit-scrollbar {
@@ -139,7 +142,7 @@ body {
 
 /* Glassmorphism for bottom nav */
 .glass {
-  background: rgba(255, 255, 255, 0.8);
+  background: rgba(255, 255, 255, 0.82);
   backdrop-filter: blur(24px);
   -webkit-backdrop-filter: blur(24px);
 }
