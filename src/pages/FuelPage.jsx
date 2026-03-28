@@ -201,14 +201,14 @@ export default function FuelPage() {
               {isLiked(healthyOption.id) && (
                 <div style={{
                   position: 'absolute', top: '10px', right: '10px',
-                  width: '34px', height: '34px', borderRadius: '10px',
+                  width: '30px', height: '30px', borderRadius: '10px',
                   background: 'rgba(255,255,255,0.85)',
                   backdropFilter: 'blur(6px)',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   boxShadow: '0 2px 8px rgba(0,0,0,0.12)',
                 }}>
                   <span className="material-symbols-outlined" style={{
-                    fontSize: '20px', color: '#e74c3c',
+                    fontSize: '25px', color: '#e74c3c',
                     fontVariationSettings: "'FILL' 1",
                   }}>favorite</span>
                 </div>
@@ -316,7 +316,7 @@ export default function FuelPage() {
               {isLiked(quickOption.id) && (
                 <div style={{
                   position: 'absolute', top: '10px', right: '10px',
-                  width: '34px', height: '34px', borderRadius: '10px',
+                  width: '30px', height: '30px', borderRadius: '10px',
                   background: 'rgba(255,255,255,0.85)',
                   backdropFilter: 'blur(6px)',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
