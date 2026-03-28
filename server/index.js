@@ -43,7 +43,7 @@ app.get('/api/withings/authorize', (req, res) => {
     + '?response_type=code'
     + '&client_id=' + CLIENT_ID
     + '&redirect_uri=' + encodeURIComponent(REDIRECT_URI)
-    + '&scope=user.metrics'
+    + '&scope=user.metrics,user.activity'
     + '&state=famished-auth'
 
   console.log('Redirecting to:', authUrl)
@@ -236,6 +236,106 @@ app.post('/api/withings/disconnect', (req, res) => {
     }
     res.json({ disconnected: true })
   } catch (err) {
+    res.status(500).json({ error: err.message })
+  }
+})
+
+// ============================================
+// SLEEP DATA (Withings Sleep v2 API)
+// ============================================
+
+// Get sleep summaries for the last 30 days
+app.get('/api/withings/sleep', async (req, res) => {
+  const accessToken = await getValidAccessToken()
+
+  if (!accessToken) {
+    return res.status(401).json({ error: 'Not connected', connected: false })
+  }
+
+  try {
+    // Last 30 days of sleep data
+    const startdate = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
+      .toISOString().split('T')[0]
+    const enddate = new Date().toISOString().split('T')[0]
+
+    const response = await fetch('https://wbsapi.withings.net/v2/sleep', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'Authorization': `Bearer ${accessToken}`,
+      },
+      body: new URLSearchParams({
+        action: 'getsummary',
+        startdateymd: startdate,
+        enddateymd: enddate,
+        data_fields: 'nb_rem_episodes,sleep_efficiency,sleep_latency,total_sleep_time,total_timeinbed,wakeup_latency,waso,deepsleepduration,lightsleepduration,remsleepduration,sleep_score,hr_average,hr_min,hr_max,rr_average,rr_min,rr_max,breathing_disturbances_intensity,snoring',
+      }),
+    })
+
+    const data = await response.json()
+
+    if (data.status !== 0) {
+      console.error('Sleep fetch failed:', data)
+      return res.status(400).json({ error: 'Failed to fetch sleep data', details: data })
+    }
+
+    // Parse sleep summaries
+    const nights = []
+    if (data.body && data.body.series) {
+      for (const s of data.body.series) {
+        const totalHours = s.data?.total_sleep_time
+          ? Math.round((s.data.total_sleep_time / 3600) * 10) / 10
+          : null
+        const deepHours = s.data?.deepsleepduration
+          ? Math.round((s.data.deepsleepduration / 3600) * 10) / 10
+          : null
+        const remHours = s.data?.remsleepduration
+          ? Math.round((s.data.remsleepduration / 3600) * 10) / 10
+          : null
+        const lightHours = s.data?.lightsleepduration
+          ? Math.round((s.data.lightsleepduration / 3600) * 10) / 10
+          : null
+
+        nights.push({
+          date: s.date,
+          sleepScore: s.data?.sleep_score ?? null,
+          totalHours,
+          deepHours,
+          remHours,
+          lightHours,
+          efficiency: s.data?.sleep_efficiency ?? null,
+          hrAvg: s.data?.hr_average ?? null,
+          hrMin: s.data?.hr_min ?? null,
+          rrAvg: s.data?.rr_average ?? null,
+          breathingDisturbances: s.data?.breathing_disturbances_intensity ?? null,
+          snoring: s.data?.snoring ?? null,
+        })
+      }
+    }
+
+    // Sort by date, newest last
+    nights.sort((a, b) => a.date.localeCompare(b.date))
+
+    // Calculate 7-day and 30-day averages
+    const last7 = nights.slice(-7)
+    const avg7Score = last7.length > 0
+      ? Math.round(last7.reduce((s, n) => s + (n.sleepScore || 0), 0) / last7.length)
+      : null
+    const avg7Hours = last7.length > 0
+      ? Math.round(last7.reduce((s, n) => s + (n.totalHours || 0), 0) / last7.length * 10) / 10
+      : null
+
+    res.json({
+      connected: true,
+      nights,
+      latest: nights.length > 0 ? nights[nights.length - 1] : null,
+      averages: {
+        last7: { score: avg7Score, hours: avg7Hours },
+        totalNights: nights.length,
+      },
+    })
+  } catch (err) {
+    console.error('Sleep fetch error:', err)
     res.status(500).json({ error: err.message })
   }
 })

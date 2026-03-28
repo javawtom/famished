@@ -139,14 +139,14 @@ export default function FuelPage() {
         </div>
       )}
 
-      {/* ===== DECISION HEADLINE ===== */}
+      {/* ===== COACH DIRECTIVE ===== */}
       <section style={{ textAlign: 'center' }}>
         <h2 style={{
           fontSize: '34px', fontWeight: 800, letterSpacing: '-0.02em',
           color: '#2f332f', margin: '0 0 8px',
-        }}>Do you want to eat?</h2>
+        }}>{getCoachHeadline(mealPeriod.mealType, streakDays)}</h2>
         <p style={{ color: '#5f5f5c', fontSize: '17px', lineHeight: 1.6 }}>
-          It's time for {mealLabel}. Choose what feels right.
+          {getCoachSubtext(mealPeriod.mealType, streakDays)}
         </p>
         {/* Streak badge */}
         {badgeInfo && (
@@ -399,4 +399,96 @@ export default function FuelPage() {
       </div>
     </div>
   )
+}
+
+// ============================================
+// HARDASS COACH MESSAGING
+// ============================================
+
+function getCoachHeadline(mealType, streak) {
+  const headlinesByMeal = {
+    breakfast: [
+      "It's breakfast. Pick one.",
+      "Your body's been fasting. Eat.",
+      "Morning fuel. No excuses.",
+      "Rise and eat. Now.",
+    ],
+    lunch: [
+      "Lunch. Two options. Pick.",
+      "Midday fuel. Choose now.",
+      "You're eating lunch. Period.",
+      "Refuel time. No skipping.",
+    ],
+    snack: [
+      "Snack time. Eat something.",
+      "Your body needs this. Pick.",
+      "Quick fuel. Don't skip.",
+      "Eat the snack, Jody.",
+    ],
+    dinner: [
+      "Dinner's now. Pick one.",
+      "Time to eat. No debate.",
+      "Evening fuel. Choose.",
+      "Sit down and eat, Jody.",
+    ],
+    latenight: [
+      "One more meal. Pick it.",
+      "Late fuel. Light but required.",
+      "Don't go to bed empty.",
+      "Last call. Choose now.",
+    ],
+  }
+
+  // Streak-specific overrides (get more intense)
+  if (streak >= 30) return "Day " + streak + ". Don't stop now."
+  if (streak >= 14) return "Keep the chain going."
+  if (streak >= 7) return "7+ and counting. Eat."
+
+  const options = headlinesByMeal[mealType] || headlinesByMeal.dinner
+  // Rotate daily
+  const dayIndex = new Date().getDate() % options.length
+  return options[dayIndex]
+}
+
+function getCoachSubtext(mealType, streak) {
+  const subtextByMeal = {
+    breakfast: [
+      "Two options below. You're picking one before you do anything else today.",
+      "Your metabolism doesn't negotiate. Neither do I. Pick one.",
+      "Not a question. Not a suggestion. Two meals, one choice. Go.",
+      "You didn't wake up to skip breakfast. Choose and move on.",
+    ],
+    lunch: [
+      "Halfway through the day. You're not running on empty. Pick one.",
+      "This isn't optional. Two solid options, zero excuses.",
+      "Lunch fuels your afternoon. Pick one and keep moving.",
+      "Your body's working hard. Feed it. Now.",
+    ],
+    snack: [
+      "Small meal, big impact. Pick one and don't overthink it.",
+      "This keeps your energy flat. Just choose.",
+      "Quick bite. Keep the machine running.",
+      "No skipping. Eat something and get back to it.",
+    ],
+    dinner: [
+      "Day's winding down. Your body needs fuel to recover. Pick one.",
+      "Two options. Pick the one that sounds less annoying. Just pick.",
+      "Recovery starts with dinner. Choose and cook.",
+      "The gym didn't build you. The kitchen does. Pick one.",
+    ],
+    latenight: [
+      "One last push for the day. Light fuel, big difference tomorrow.",
+      "Don't go to bed on empty. Something small, right now.",
+      "Your overnight recovery depends on this. Choose.",
+      "Final meal of the day. Make it count.",
+    ],
+  }
+
+  if (streak >= 30) return `${streak} days of showing up. You know the drill — just pick.`
+  if (streak >= 7) return "You've built momentum. Don't let one skip unravel it. Pick one."
+  if (streak >= 3) return "Streak's building. Keep it alive. Pick one."
+
+  const options = subtextByMeal[mealType] || subtextByMeal.dinner
+  const dayIndex = new Date().getDate() % options.length
+  return options[dayIndex]
 }
