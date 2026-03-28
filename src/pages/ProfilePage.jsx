@@ -2,6 +2,7 @@ import { useState } from 'react'
 import useLocalStorage from '../hooks/useLocalStorage'
 import useMealNotifications from '../hooks/useMealNotifications'
 import useCardRanking from '../hooks/useCardRanking'
+import useWithings from '../hooks/useWithings'
 import meals from '../data/meals'
 
 const APPLIANCE_TEMPLATES = [
@@ -44,6 +45,7 @@ export default function ProfilePage({ onClose }) {
   const [customModel, setCustomModel] = useState('')
   const notifications = useMealNotifications()
   const ranking = useCardRanking()
+  const withings = useWithings()
 
   // Get discarded meals
   const discardedMeals = meals.filter(m => ranking.isDiscarded(m.id))
@@ -387,6 +389,76 @@ export default function ProfilePage({ onClose }) {
               </div>
             </div>
           )}
+
+          {/* ===== WITHINGS CONNECTION ===== */}
+          <div style={{ marginTop: '24px', marginBottom: '24px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
+              <span className="material-symbols-outlined" style={{ color: '#4f645b', fontSize: '20px' }}>monitor_weight</span>
+              <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 700, color: '#2f332f' }}>Withings Integration</h3>
+            </div>
+            <p style={{ margin: '0 0 16px', fontSize: '13px', color: '#787c77', lineHeight: 1.5 }}>
+              Connect your Withings scale & sleep mat for automatic weight and sleep tracking.
+            </p>
+            <div style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              padding: '16px 20px', borderRadius: '16px',
+              background: withings.connected ? '#d1e8dd' : '#f3f4ef',
+              border: withings.connected ? '2px solid #4f645b' : '2px solid transparent',
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <span className="material-symbols-outlined" style={{
+                  fontSize: '22px',
+                  color: withings.connected ? '#4f645b' : '#787c77',
+                  fontVariationSettings: withings.connected ? "'FILL' 1" : "'FILL' 0",
+                }}>monitor_weight</span>
+                <div>
+                  <span style={{
+                    fontSize: '14px', fontWeight: 700,
+                    color: withings.connected ? '#42564e' : '#5f5f5c',
+                  }}>{withings.loading ? 'Checking...' : withings.connected ? 'Connected' : 'Not Connected'}</span>
+                  <span style={{ display: 'block', fontSize: '11px', color: '#787c77' }}>
+                    {withings.serverDown
+                      ? 'Start the API server'
+                      : withings.connected
+                        ? withings.syncing ? 'Syncing...' : 'Auto-syncing weight & sleep'
+                        : 'Scale · Sleep Mat'}
+                  </span>
+                </div>
+              </div>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                {withings.connected && (
+                  <button
+                    onClick={withings.refresh}
+                    disabled={withings.syncing}
+                    style={{
+                      padding: '8px', borderRadius: '10px', border: 'none',
+                      background: 'rgba(47,67,60,0.1)', cursor: 'pointer',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    }}
+                  >
+                    <span className="material-symbols-outlined" style={{
+                      color: '#2f433c', fontSize: '18px',
+                      animation: withings.syncing ? 'spin 1s linear infinite' : 'none',
+                    }}>refresh</span>
+                  </button>
+                )}
+                {!withings.loading && !withings.serverDown && (
+                  <button
+                    onClick={withings.connected ? withings.disconnect : withings.connect}
+                    style={{
+                      padding: '8px 16px', borderRadius: '9999px', border: 'none',
+                      fontFamily: "'Manrope', sans-serif", fontWeight: 700, fontSize: '12px',
+                      cursor: 'pointer', transition: 'all 0.3s ease',
+                      background: withings.connected ? 'rgba(167,59,33,0.1)' : '#4f645b',
+                      color: withings.connected ? '#a73b21' : '#e7fef3',
+                    }}
+                  >
+                    {withings.connected ? 'Disconnect' : 'Connect'}
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
 
           {/* ===== NOTIFICATIONS SECTION ===== */}
           <div style={{ marginTop: '24px', marginBottom: '24px' }}>

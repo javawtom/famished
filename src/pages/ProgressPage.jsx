@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useApp } from '../context/AppContext'
 import useWithings from '../hooks/useWithings'
 import useSleepData from '../hooks/useSleepData'
+import SwipeableTarget from '../components/SwipeableTarget'
 import schedule, { formatTime } from '../data/schedule'
 
 const quotes = [
@@ -40,10 +41,9 @@ export default function ProgressPage() {
   const sleep = useSleepData()
   const [showWeightInput, setShowWeightInput] = useState(false)
   const [weightInput, setWeightInput] = useState('')
-  const [sliderValue, setSliderValue] = useState(targetWeight)
+  const [targetDraft, setTargetDraft] = useState(targetWeight)
 
-  // Sync slider with stored target
-  useEffect(() => { setSliderValue(targetWeight) }, [targetWeight])
+  useEffect(() => { setTargetDraft(targetWeight) }, [targetWeight])
 
   // Auto-sync Withings data into app state
   useEffect(() => {
@@ -100,7 +100,7 @@ export default function ProgressPage() {
     : ''
 
   // Target weight line Y position
-  const targetY = padY + chartH - ((targetWeight - minWeight) / range) * chartH
+  const targetY = padY + chartH - ((targetDraft - minWeight) / range) * chartH
 
   const handleLogWeight = () => {
     const w = parseFloat(weightInput)
@@ -111,15 +111,9 @@ export default function ProgressPage() {
     }
   }
 
-  const handleSliderChange = (e) => {
-    const val = parseInt(e.target.value)
-    setSliderValue(val)
+  const handleTargetCommit = () => {
+    setTargetWeight(targetDraft)
   }
-
-  const handleSliderCommit = () => {
-    setTargetWeight(sliderValue)
-  }
-
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '40px' }}>
       {/* ===== EDITORIAL HEADER ===== */}
@@ -130,67 +124,6 @@ export default function ProgressPage() {
         </h2>
       </section>
 
-      {/* ===== WITHINGS CONNECTION CARD ===== */}
-      <section style={{
-        background: withings.connected ? '#d1e8dd' : '#ffffff',
-        padding: '24px', borderRadius: '1.5rem',
-        boxShadow: '0 4px 16px rgba(47, 51, 47, 0.06)',
-        display: 'flex', alignItems: 'center', gap: '16px',
-      }}>
-        <div style={{
-          width: '48px', height: '48px', borderRadius: '16px',
-          background: withings.connected ? '#4f645b' : '#edefe9',
-          display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-        }}>
-          <span className="material-symbols-outlined" style={{
-            color: withings.connected ? '#e7fef3' : '#4f645b',
-            fontSize: '24px',
-            fontVariationSettings: withings.connected ? "'FILL' 1" : "'FILL' 0",
-          }}>monitor_weight</span>
-        </div>
-        <div style={{ flex: 1 }}>
-          <h4 style={{ fontSize: '16px', fontWeight: 700, color: withings.connected ? '#2f433c' : '#2f332f', margin: '0 0 2px' }}>
-            {withings.loading ? 'Checking...' : withings.connected ? 'Withings Connected' : 'Withings Scale'}
-          </h4>
-          <p style={{ fontSize: '13px', color: withings.connected ? '#42564e' : '#5f5f5c', margin: 0 }}>
-            {withings.serverDown
-              ? 'Start the API server: npm run api'
-              : withings.connected
-                ? withings.syncing ? 'Syncing...' : 'Auto-syncing your weight'
-                : 'Connect your WiFi scale for automatic tracking'}
-          </p>
-        </div>
-        {!withings.loading && !withings.serverDown && (
-          <button
-            onClick={withings.connected ? withings.disconnect : withings.connect}
-            style={{
-              padding: '10px 20px', borderRadius: '9999px', border: 'none',
-              fontFamily: "'Manrope', sans-serif", fontWeight: 700, fontSize: '13px',
-              cursor: 'pointer', transition: 'all 0.3s ease', flexShrink: 0,
-              background: withings.connected ? 'rgba(47,67,60,0.15)' : '#4f645b',
-              color: withings.connected ? '#2f433c' : '#e7fef3',
-            }}
-          >
-            {withings.connected ? 'Disconnect' : 'Connect'}
-          </button>
-        )}
-        {withings.connected && (
-          <button
-            onClick={withings.refresh}
-            disabled={withings.syncing}
-            style={{
-              padding: '10px', borderRadius: '12px', border: 'none',
-              background: 'rgba(47,67,60,0.1)', cursor: 'pointer', flexShrink: 0,
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-            }}
-          >
-            <span className="material-symbols-outlined" style={{
-              color: '#2f433c', fontSize: '20px',
-              animation: withings.syncing ? 'spin 1s linear infinite' : 'none',
-            }}>refresh</span>
-          </button>
-        )}
-      </section>
 
       {/* ===== WEIGHT LINE CHART ===== */}
       <section style={{
@@ -204,10 +137,15 @@ export default function ProgressPage() {
               {Number(currentWeight).toFixed(1)} <span style={{ fontSize: '18px', fontWeight: 400, color: '#535351' }}>lbs</span>
             </h3>
           </div>
-          <div style={{ textAlign: 'right' }}>
-            <p style={{ color: '#5f5f5c', fontSize: '14px', fontWeight: 500, margin: '0 0 4px' }}>Target</p>
-            <h3 style={{ fontSize: '20px', fontWeight: 700, color: '#4f645b', margin: 0 }}>{sliderValue} lbs</h3>
-          </div>
+          <SwipeableTarget
+            value={targetDraft}
+            onChange={setTargetDraft}
+            onCommit={handleTargetCommit}
+            min={100}
+            max={250}
+            step={0.15}
+            unit="lbs"
+          />
         </div>
 
         {/* SVG Line Chart */}
@@ -228,7 +166,7 @@ export default function ProgressPage() {
                 <line x1={padX} y1={targetY} x2={svgW - padX} y2={targetY}
                   stroke="#4f645b" strokeWidth="1" strokeDasharray="6 4" opacity="0.4" />
                 <text x={svgW - padX + 4} y={targetY + 4}
-                  fill="#4f645b" fontSize="10" fontWeight="600" fontFamily="Manrope">{sliderValue}</text>
+                  fill="#4f645b" fontSize="10" fontWeight="600" fontFamily="Manrope">{targetDraft}</text>
               </>
             )}
 
@@ -261,30 +199,6 @@ export default function ProgressPage() {
           </svg>
         </div>
 
-        {/* Target Weight Slider */}
-        <div style={{ marginTop: '24px', padding: '20px', background: '#f3f4ef', borderRadius: '16px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-            <span style={{ fontSize: '13px', fontWeight: 700, color: '#5f5f5c', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Target Weight</span>
-            <span style={{ fontSize: '18px', fontWeight: 700, color: '#4f645b' }}>{sliderValue} lbs</span>
-          </div>
-          <input
-            type="range"
-            min="100" max="250" step="1"
-            value={sliderValue}
-            onChange={handleSliderChange}
-            onMouseUp={handleSliderCommit}
-            onTouchEnd={handleSliderCommit}
-            style={{
-              width: '100%', height: '6px', appearance: 'none', WebkitAppearance: 'none',
-              background: `linear-gradient(to right, #4f645b 0%, #4f645b ${((sliderValue - 100) / 150) * 100}%, #e0e4dd ${((sliderValue - 100) / 150) * 100}%, #e0e4dd 100%)`,
-              borderRadius: '9999px', outline: 'none', cursor: 'pointer',
-            }}
-          />
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '8px', fontSize: '10px', fontWeight: 600, color: '#787c77' }}>
-            <span>100 lbs</span>
-            <span>250 lbs</span>
-          </div>
-        </div>
 
         {/* Log Weight (manual fallback) */}
         {!withings.connected && (
