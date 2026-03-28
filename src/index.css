@@ -1,0 +1,183 @@
+@import "tailwindcss";
+
+/* ============================================
+   FUEL NOW — Design System: "The Serene Sanctuary"
+   Extracted from stitch DESIGN.md
+   ============================================ */
+
+@theme {
+  /* ---- Surface Hierarchy ---- */
+  --color-surface: #faf9f5;
+  --color-surface-dim: #d7dbd5;
+  --color-surface-bright: #faf9f5;
+  --color-surface-container-lowest: #ffffff;
+  --color-surface-container-low: #f3f4ef;
+  --color-surface-container: #edefe9;
+  --color-surface-container-high: #e6e9e3;
+  --color-surface-container-highest: #e0e4dd;
+  --color-surface-variant: #e0e4dd;
+  --color-surface-tint: #4f645b;
+
+  /* ---- Primary Palette ---- */
+  --color-primary: #4f645b;
+  --color-primary-dim: #43574f;
+  --color-primary-container: #d1e8dd;
+  --color-primary-fixed: #d1e8dd;
+  --color-primary-fixed-dim: #c3dacf;
+  --color-on-primary: #e7fef3;
+  --color-on-primary-container: #42564e;
+  --color-on-primary-fixed: #2f433c;
+  --color-on-primary-fixed-variant: #4b6057;
+  --color-inverse-primary: #e7fff3;
+
+  /* ---- Secondary Palette ---- */
+  --color-secondary: #5f5f5c;
+  --color-secondary-dim: #535351;
+  --color-secondary-container: #e4e2df;
+  --color-secondary-fixed: #e4e2df;
+  --color-secondary-fixed-dim: #d6d4d1;
+  --color-on-secondary: #fbf8f5;
+  --color-on-secondary-container: #52524f;
+  --color-on-secondary-fixed: #3f3f3d;
+  --color-on-secondary-fixed-variant: #5c5b59;
+
+  /* ---- Tertiary Palette ---- */
+  --color-tertiary: #695d52;
+  --color-tertiary-dim: #5d5146;
+  --color-tertiary-container: #fdebdc;
+  --color-tertiary-fixed: #fdebdc;
+  --color-tertiary-fixed-dim: #eeddce;
+  --color-on-tertiary: #fff7f3;
+  --color-on-tertiary-container: #62564b;
+  --color-on-tertiary-fixed: #4f443a;
+  --color-on-tertiary-fixed-variant: #6d6055;
+
+  /* ---- Error Palette ---- */
+  --color-error: #a73b21;
+  --color-error-dim: #791903;
+  --color-error-container: #fd795a;
+  --color-on-error: #fff7f6;
+  --color-on-error-container: #6e1400;
+
+  /* ---- Neutral / On ---- */
+  --color-on-surface: #2f332f;
+  --color-on-surface-variant: #5c605b;
+  --color-on-background: #2f332f;
+  --color-background: #faf9f5;
+  --color-outline: #787c77;
+  --color-outline-variant: #afb3ad;
+  --color-inverse-surface: #0d0f0d;
+  --color-inverse-on-surface: #9c9d9a;
+
+  /* ---- Typography ---- */
+  --font-family-headline: 'Manrope', sans-serif;
+  --font-family-body: 'Manrope', sans-serif;
+  --font-family-label: 'Manrope', sans-serif;
+
+  /* ---- Shadows (Botanical) ---- */
+  --shadow-botanical: 0 12px 32px rgba(47, 51, 47, 0.08);
+  --shadow-botanical-lg: 0 32px 64px rgba(79, 100, 91, 0.1);
+  --shadow-botanical-up: 0 -12px 32px rgba(47, 51, 47, 0.05);
+}
+
+/* ============================================
+   BASE STYLES
+   ============================================ */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  font-family: 'Manrope', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  background-color: var(--color-surface);
+  color: var(--color-on-surface);
+  min-height: 100dvh;
+  overflow-x: hidden;
+}
+
+/* ============================================
+   MATERIAL SYMBOLS ICON CONFIG
+   ============================================ */
+
+.material-symbols-outlined {
+  font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24;
+  vertical-align: middle;
+  user-select: none;
+}
+
+.material-symbols-outlined.filled {
+  font-variation-settings: 'FILL' 1, 'wght' 300, 'GRAD' 0, 'opsz' 24;
+}
+
+/* ============================================
+   UTILITY CLASSES
+   ============================================ */
+
+.botanical-shadow {
+  box-shadow: var(--shadow-botanical);
+}
+
+.botanical-shadow-lg {
+  box-shadow: var(--shadow-botanical-lg);
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Glassmorphism for bottom nav */
+.glass {
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+}
+
+/* Soft Fill progress bar pulse animation */
+@keyframes soft-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.85; }
+}
+
+.progress-pulse {
+  animation: soft-pulse 3s ease-in-out infinite;
+}
+
+/* Fade and Slide animation (per design system: upward 20px over 400ms) */
+@keyframes fade-slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-up {
+  animation: fade-slide-up 400ms ease-out forwards;
+}
+
+/* Stagger children animations */
+.stagger-children > * {
+  opacity: 0;
+  animation: fade-slide-up 400ms ease-out forwards;
+}
+.stagger-children > *:nth-child(1) { animation-delay: 0ms; }
+.stagger-children > *:nth-child(2) { animation-delay: 80ms; }
+.stagger-children > *:nth-child(3) { animation-delay: 160ms; }
+.stagger-children > *:nth-child(4) { animation-delay: 240ms; }
+.stagger-children > *:nth-child(5) { animation-delay: 320ms; }
+.stagger-children > *:nth-child(6) { animation-delay: 400ms; }
