@@ -1,18 +1,52 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useApp } from '../context/AppContext'
+import useWithings from '../hooks/useWithings'
 import schedule, { formatTime } from '../data/schedule'
 
 export default function ProgressPage() {
   const { currentWeight, weightLog, logWeight, streakDays } = useApp()
+  const withings = useWithings()
   const [showWeightInput, setShowWeightInput] = useState(false)
   const [weightInput, setWeightInput] = useState('')
 
-  const totalGained = currentWeight - 145
-  const progressPercent = Math.min(100, Math.round(((currentWeight - 145) / (175 - 145)) * 100))
+  // Auto-sync Withings data into app state
+  useEffect(() => {
+    if (withings.latest && withings.latest.weightLbs) {
+      const latestWeight = withings.latest.weightLbs
+      if (latestWeight !== currentWeight) {
+        logWeight(latestWeight)
+      }
+    }
+  }, [withings.latest])
 
-  // Chart data from weight log (last 7 entries)
+  // Sync all Withings measurements into weight log
+  useEffect(() => {
+    if (withings.measurements.length > 0) {
+      for (const m of withings.measurements) {
+        // logWeight already deduplicates by date
+      }
+    }
+  }, [withings.measurements])
+
+  // Check for ?withings=connected in URL
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    if (params.get('withings') === 'connected') {
+      window.history.replaceState({}, '', '/progress')
+    }
+  }, [])
+
+  const totalGained = currentWeight - 145
+
+  // Chart data
   const monthLabels = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC']
-  const recentLog = weightLog.slice(-7)
+
+  // Use Withings data if available, otherwise fallback to manual log
+  const chartSource = withings.measurements.length > 0
+    ? withings.measurements.map(m => ({ date: m.date, weight: m.weightLbs }))
+    : weightLog
+
+  const recentLog = chartSource.slice(-7)
   const chartData = []
   for (let i = 0; i < 7; i++) {
     if (i < recentLog.length) {
@@ -46,6 +80,68 @@ export default function ProgressPage() {
         <h2 style={{ fontSize: '36px', fontWeight: 800, color: '#2f332f', lineHeight: 1.15, margin: 0, letterSpacing: '-0.02em' }}>
           Nurturing your <span style={{ color: '#4f645b', fontStyle: 'italic' }}>steady growth</span>.
         </h2>
+      </section>
+
+      {/* ===== WITHINGS CONNECTION CARD ===== */}
+      <section style={{
+        background: withings.connected ? '#d1e8dd' : '#ffffff',
+        padding: '24px', borderRadius: '1.5rem',
+        boxShadow: '0 4px 16px rgba(47, 51, 47, 0.06)',
+        display: 'flex', alignItems: 'center', gap: '16px',
+      }}>
+        <div style={{
+          width: '48px', height: '48px', borderRadius: '16px',
+          background: withings.connected ? '#4f645b' : '#edefe9',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+        }}>
+          <span className="material-symbols-outlined" style={{
+            color: withings.connected ? '#e7fef3' : '#4f645b',
+            fontSize: '24px',
+            fontVariationSettings: withings.connected ? "'FILL' 1" : "'FILL' 0",
+          }}>monitor_weight</span>
+        </div>
+        <div style={{ flex: 1 }}>
+          <h4 style={{ fontSize: '16px', fontWeight: 700, color: withings.connected ? '#2f433c' : '#2f332f', margin: '0 0 2px' }}>
+            {withings.loading ? 'Checking...' : withings.connected ? 'Withings Connected' : 'Withings Scale'}
+          </h4>
+          <p style={{ fontSize: '13px', color: withings.connected ? '#42564e' : '#5f5f5c', margin: 0 }}>
+            {withings.serverDown
+              ? 'Start the API server: npm run api'
+              : withings.connected
+                ? withings.syncing ? 'Syncing...' : 'Auto-syncing your weight'
+                : 'Connect your WiFi scale for automatic tracking'}
+          </p>
+        </div>
+        {!withings.loading && !withings.serverDown && (
+          <button
+            onClick={withings.connected ? withings.disconnect : withings.connect}
+            style={{
+              padding: '10px 20px', borderRadius: '9999px', border: 'none',
+              fontFamily: "'Manrope', sans-serif", fontWeight: 700, fontSize: '13px',
+              cursor: 'pointer', transition: 'all 0.3s ease', flexShrink: 0,
+              background: withings.connected ? 'rgba(47,67,60,0.15)' : '#4f645b',
+              color: withings.connected ? '#2f433c' : '#e7fef3',
+            }}
+          >
+            {withings.connected ? 'Disconnect' : 'Connect'}
+          </button>
+        )}
+        {withings.connected && (
+          <button
+            onClick={withings.refresh}
+            disabled={withings.syncing}
+            style={{
+              padding: '10px', borderRadius: '12px', border: 'none',
+              background: 'rgba(47,67,60,0.1)', cursor: 'pointer', flexShrink: 0,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}
+          >
+            <span className="material-symbols-outlined" style={{
+              color: '#2f433c', fontSize: '20px',
+              animation: withings.syncing ? 'spin 1s linear infinite' : 'none',
+            }}>refresh</span>
+          </button>
+        )}
       </section>
 
       {/* ===== WEIGHT CHART CARD ===== */}
@@ -97,42 +193,44 @@ export default function ProgressPage() {
           ))}
         </div>
 
-        {/* Log Weight */}
-        <div style={{ marginTop: '24px' }}>
-          {showWeightInput ? (
-            <div style={{ display: 'flex', gap: '12px' }}>
-              <input
-                type="number"
-                value={weightInput}
-                onChange={(e) => setWeightInput(e.target.value)}
-                placeholder="Enter weight..."
-                autoFocus
-                onKeyDown={(e) => e.key === 'Enter' && handleLogWeight()}
-                style={{
-                  flex: 1, background: '#edefe9', border: 'none', borderRadius: '12px',
-                  padding: '14px 16px', fontFamily: "'Manrope', sans-serif",
-                  fontSize: '15px', color: '#2f332f', outline: 'none',
-                }}
-              />
-              <button onClick={handleLogWeight} style={{
-                background: '#4f645b', color: '#e7fef3', border: 'none', borderRadius: '12px',
-                padding: '14px 24px', fontFamily: "'Manrope', sans-serif", fontWeight: 700, fontSize: '14px', cursor: 'pointer',
-              }}>Log</button>
-              <button onClick={() => setShowWeightInput(false)} style={{
-                background: '#e6e9e3', color: '#2f332f', border: 'none', borderRadius: '12px',
-                padding: '14px 16px', fontFamily: "'Manrope', sans-serif", fontWeight: 700, cursor: 'pointer',
-              }}>✕</button>
-            </div>
-          ) : (
-            <button onClick={() => setShowWeightInput(true)} style={{
-              width: '100%', padding: '14px', borderRadius: '9999px', border: 'none',
-              background: '#e6e9e3', color: '#2f332f', fontFamily: "'Manrope', sans-serif",
-              fontWeight: 700, fontSize: '14px', cursor: 'pointer',
-            }}>
-              Log Today's Weight
-            </button>
-          )}
-        </div>
+        {/* Log Weight (manual fallback) */}
+        {!withings.connected && (
+          <div style={{ marginTop: '24px' }}>
+            {showWeightInput ? (
+              <div style={{ display: 'flex', gap: '12px' }}>
+                <input
+                  type="number"
+                  value={weightInput}
+                  onChange={(e) => setWeightInput(e.target.value)}
+                  placeholder="Enter weight..."
+                  autoFocus
+                  onKeyDown={(e) => e.key === 'Enter' && handleLogWeight()}
+                  style={{
+                    flex: 1, background: '#edefe9', border: 'none', borderRadius: '12px',
+                    padding: '14px 16px', fontFamily: "'Manrope', sans-serif",
+                    fontSize: '15px', color: '#2f332f', outline: 'none',
+                  }}
+                />
+                <button onClick={handleLogWeight} style={{
+                  background: '#4f645b', color: '#e7fef3', border: 'none', borderRadius: '12px',
+                  padding: '14px 24px', fontFamily: "'Manrope', sans-serif", fontWeight: 700, fontSize: '14px', cursor: 'pointer',
+                }}>Log</button>
+                <button onClick={() => setShowWeightInput(false)} style={{
+                  background: '#e6e9e3', color: '#2f332f', border: 'none', borderRadius: '12px',
+                  padding: '14px 16px', fontFamily: "'Manrope', sans-serif", fontWeight: 700, cursor: 'pointer',
+                }}>✕</button>
+              </div>
+            ) : (
+              <button onClick={() => setShowWeightInput(true)} style={{
+                width: '100%', padding: '14px', borderRadius: '9999px', border: 'none',
+                background: '#e6e9e3', color: '#2f332f', fontFamily: "'Manrope', sans-serif",
+                fontWeight: 700, fontSize: '14px', cursor: 'pointer',
+              }}>
+                Log Today's Weight
+              </button>
+            )}
+          </div>
+        )}
       </section>
 
       {/* ===== STATS CARDS ===== */}

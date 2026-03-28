@@ -26,5 +26,8 @@ Thumbs.db
 .env.local
 .env.*.local
 
+# Withings tokens (sensitive)
+server/.withings-tokens.json
+
 # Stitch export (design reference only)
 stitch_export/
