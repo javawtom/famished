@@ -140,7 +140,7 @@ export default function FuelPage() {
                 : 'bg-gradient-to-r from-primary to-primary-dim text-on-primary botanical-shadow'
             }`}
           >
-            {eaten ? '✓ You've fueled up' : justAte ? '✓ Logged!' : "I've Eaten"}
+            {eaten ? '\u2713 You\u2019ve fueled up' : justAte ? '\u2713 Logged!' : "I've Eaten"}
           </button>
         </div>
       </section>
