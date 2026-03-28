@@ -39,14 +39,15 @@ function saveTokens(tokens) {
 
 // Step 1: Redirect user to Withings authorization page
 app.get('/api/withings/authorize', (req, res) => {
-  const params = new URLSearchParams({
-    response_type: 'code',
-    client_id: CLIENT_ID,
-    redirect_uri: REDIRECT_URI,
-    scope: 'user.metrics',
-    state: 'famished-auth',
-  })
-  res.redirect(`https://account.withings.com/oauth2_user/authorize2?${params}`)
+  const authUrl = 'https://account.withings.com/oauth2_user/authorize2'
+    + '?response_type=code'
+    + '&client_id=' + CLIENT_ID
+    + '&redirect_uri=' + encodeURIComponent(REDIRECT_URI)
+    + '&scope=user.metrics'
+    + '&state=famished-auth'
+
+  console.log('Redirecting to:', authUrl)
+  res.redirect(authUrl)
 })
 
 // Step 2: Handle callback with authorization code
