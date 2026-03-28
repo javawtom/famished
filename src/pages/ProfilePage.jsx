@@ -392,19 +392,13 @@ export default function ProfilePage({ onClose }) {
           <div style={{ marginTop: '24px', marginBottom: '24px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
               <span className="material-symbols-outlined" style={{ color: '#4f645b', fontSize: '20px' }}>notifications</span>
-              <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 700, color: '#2f332f' }}>Meal Reminders</h3>
+              <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 700, color: '#2f332f' }}>Meal Prep Reminders</h3>
             </div>
             <p style={{ margin: '0 0 16px', fontSize: '13px', color: '#787c77', lineHeight: 1.5 }}>
-              Get notified when it's time to eat. Reminders fire at each scheduled meal time.
+              Get notified 30 min before each meal so you have time to prep.
             </p>
             <div
-              onClick={async () => {
-                if (notifications.enabled) {
-                  notifications.disable()
-                } else {
-                  await notifications.requestPermission()
-                }
-              }}
+              onClick={() => notifications.toggleEnabled()}
               style={{
                 display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                 padding: '16px 20px', borderRadius: '16px',
@@ -428,11 +422,9 @@ export default function ProfilePage({ onClose }) {
                     display: 'block', fontSize: '11px',
                     color: notifications.enabled ? '#43574f' : '#afb3ad',
                   }}>
-                    {notifications.permissionState === 'denied'
-                      ? 'Blocked — allow in browser settings'
-                      : notifications.enabled
-                        ? '8am · 1pm · 4pm · 7pm · 10pm'
-                        : 'Browser notifications at meal times'}
+                    {notifications.enabled
+                      ? '7:30a · 12:30p · 3:30p · 6:30p · 9:30p'
+                      : 'Prep alerts 30 min before meals'}
                   </span>
                 </div>
               </div>
@@ -441,6 +433,7 @@ export default function ProfilePage({ onClose }) {
                 width: '44px', height: '26px', borderRadius: '13px',
                 background: notifications.enabled ? '#4f645b' : '#afb3ad',
                 position: 'relative', transition: 'background 0.3s ease',
+                flexShrink: 0,
               }}>
                 <div style={{
                   width: '20px', height: '20px', borderRadius: '50%',
@@ -451,6 +444,11 @@ export default function ProfilePage({ onClose }) {
                 }} />
               </div>
             </div>
+            {notifications.enabled && !notifications.supportsNotifications && (
+              <p style={{ margin: '10px 0 0', fontSize: '11px', color: '#787c77', fontStyle: 'italic' }}>
+                📱 Browser notifications aren't supported here. You'll see in-app alerts when the app is open.
+              </p>
+            )}
           </div>
 
           {/* ===== DISCARDED CARDS SECTION ===== */}

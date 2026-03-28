@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { getHealthyMeals, getQuickMeals } from '../data/meals'
+import useCardRanking from '../hooks/useCardRanking'
 
 const mealTypes = ['breakfast', 'lunch', 'dinner']
 const mealTypeLabels = { breakfast: 'Breakfast', lunch: 'Lunch', dinner: 'Dinner' }
@@ -11,15 +12,16 @@ const healthyDescriptions = {
 
 export default function LibraryPage() {
   const [expandedMeal, setExpandedMeal] = useState(null)
+  const ranking = useCardRanking()
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '48px' }}>
       {/* ===== EDITORIAL HEADER ===== */}
       <section>
-        <span style={{ color: '#4f645b', fontWeight: 700, letterSpacing: '0.12em', fontSize: '11px', textTransform: 'uppercase', display: 'block', marginBottom: '12px' }}>The Matrix</span>
+        <span style={{ color: '#4f645b', fontWeight: 700, letterSpacing: '0.12em', fontSize: '11px', textTransform: 'uppercase', display: 'block', marginBottom: '12px' }}>Card Collection</span>
         <h2 style={{ fontSize: '40px', fontWeight: 800, letterSpacing: '-0.02em', color: '#2f332f', margin: '0 0 16px' }}>The Meal Library</h2>
         <p style={{ color: '#5f5f5c', fontSize: '16px', lineHeight: 1.6 }}>
-          Your personal architectural foundation for nutrition. 24 curated options designed to eliminate decision fatigue and support your journey.
+          Every meal card in your deck. Browse all options, see how they rank, and discover what's earned its place.
         </p>
       </section>
 
@@ -55,6 +57,7 @@ export default function LibraryPage() {
                   meal={meal}
                   isExpanded={expandedMeal === meal.id}
                   onToggle={() => setExpandedMeal(expandedMeal === meal.id ? null : meal.id)}
+                  ranking={ranking}
                 />
               ))}
             </div>
@@ -73,6 +76,7 @@ export default function LibraryPage() {
                   meal={meal}
                   isExpanded={expandedMeal === meal.id}
                   onToggle={() => setExpandedMeal(expandedMeal === meal.id ? null : meal.id)}
+                  ranking={ranking}
                 />
               ))}
             </div>
@@ -83,28 +87,67 @@ export default function LibraryPage() {
   )
 }
 
-function MealCard({ meal, isExpanded, onToggle }) {
+function MealCard({ meal, isExpanded, onToggle, ranking }) {
+  const tier = ranking?.getTier(meal.id)
+  const score = ranking?.getScore(meal.id) || 0
+  const discarded = ranking?.isDiscarded(meal.id)
+
   return (
     <div
       style={{
         borderRadius: '1.5rem', overflow: 'hidden', background: '#ffffff',
         boxShadow: '0 4px 16px rgba(47, 51, 47, 0.06)',
         cursor: 'pointer', transition: 'all 0.3s ease',
+        opacity: discarded ? 0.5 : 1,
       }}
       onClick={onToggle}
     >
       {/* Image */}
-      <div style={{ height: '160px', overflow: 'hidden' }}>
+      <div style={{ height: '160px', overflow: 'hidden', position: 'relative' }}>
         <img
           src={meal.image}
           alt={meal.name}
           style={{ width: '100%', height: '100%', objectFit: 'cover' }}
         />
+        {/* Tier badge overlay */}
+        {tier && (
+          <div style={{
+            position: 'absolute', top: '12px', right: '12px',
+            padding: '4px 12px', borderRadius: '9999px',
+            background: tier.color, color: '#fff',
+            fontSize: '11px', fontWeight: 700, letterSpacing: '0.03em',
+            backdropFilter: 'blur(8px)',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
+          }}>
+            {tier.label}
+          </div>
+        )}
+        {discarded && (
+          <div style={{
+            position: 'absolute', top: '12px', left: '12px',
+            padding: '4px 10px', borderRadius: '9999px',
+            background: 'rgba(167,59,33,0.9)', color: '#fff',
+            fontSize: '10px', fontWeight: 700, textTransform: 'uppercase',
+            letterSpacing: '0.08em',
+          }}>
+            Removed from Pool
+          </div>
+        )}
       </div>
 
       {/* Content */}
       <div style={{ padding: '20px' }}>
-        <h5 style={{ fontWeight: 700, fontSize: '18px', color: '#2f332f', margin: '0 0 4px' }}>{meal.name}</h5>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
+          <h5 style={{ fontWeight: 700, fontSize: '18px', color: '#2f332f', margin: 0 }}>{meal.name}</h5>
+          {score !== 0 && (
+            <span style={{
+              fontSize: '12px', fontWeight: 700,
+              color: score > 0 ? '#4f645b' : '#a73b21',
+            }}>
+              {score > 0 ? '+' : ''}{score}
+            </span>
+          )}
+        </div>
         <p style={{ fontSize: '14px', color: '#5f5f5c', margin: '0 0 8px' }}>{meal.description}</p>
 
         {!isExpanded && (
