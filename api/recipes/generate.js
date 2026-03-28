@@ -8,17 +8,23 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: 'Gemini API key not configured' })
   }
 
-  const { ingredients, mealType, preferences } = req.body
+  const { ingredients, mealType, preferences, appliances } = req.body
 
   if (!ingredients || !ingredients.length) {
     return res.status(400).json({ error: 'No ingredients provided' })
+  }
+
+  // Build appliance context for the prompt
+  let applianceBlock = ''
+  if (appliances && appliances.length > 0) {
+    applianceBlock = `\nThe user has these kitchen appliances available:\n${appliances.map(a => `- ${a.type}${a.model ? ` (${a.model})` : ''}`).join('\n')}\n\nIMPORTANT: Only suggest recipes that can be made with the appliances listed above. Design the steps specifically for these appliances. If they have a specific model (like "Typhur Dome 2" air fryer or "Vitamix 750" blender), reference that model's capabilities in the instructions (e.g. specific temperature settings, speed levels, or features unique to that equipment).\n`
   }
 
   const prompt = `You are a nutritionist and chef helping someone who is trying to gain weight healthily.
 
 Given these ingredients they have at home:
 ${ingredients.map(i => `- ${i.name}${i.expiresIn ? ` (use within ${i.expiresIn} days)` : ''}`).join('\n')}
-
+${applianceBlock}
 ${mealType ? `They want a ${mealType} recipe.` : 'Suggest the best meal type.'}
 ${preferences ? `Preferences: ${preferences}` : ''}
 
@@ -27,6 +33,7 @@ Rules:
 - Focus on calorie-dense, nutritious meals for healthy weight gain
 - Keep recipes simple (under 30 min prep)
 - Include estimated calories per serving
+- Only use cooking methods possible with the available appliances
 
 Return EXACTLY this JSON format (no markdown, no code blocks):
 {
@@ -37,6 +44,7 @@ Return EXACTLY this JSON format (no markdown, no code blocks):
       "mealType": "breakfast|lunch|dinner|snack",
       "prepTime": "15 min",
       "calories": 650,
+      "appliances": ["appliance used 1", "appliance used 2"],
       "ingredients": ["ingredient 1 with amount", "ingredient 2"],
       "steps": ["Step 1 instruction", "Step 2 instruction"],
       "usesExpiring": ["ingredient name if expiring soon"]

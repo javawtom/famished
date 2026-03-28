@@ -63,6 +63,18 @@ export default function ListPage() {
     setAiError(null)
     setAiRecipes(null)
 
+    // Read kitchen appliances from localStorage
+    let appliances = []
+    try {
+      const stored = JSON.parse(localStorage.getItem('fn-appliances-v2') || '{}')
+      appliances = Object.entries(stored)
+        .filter(([, d]) => d.enabled)
+        .map(([id, d]) => ({
+          type: id.startsWith('custom-') ? (d.customName || id) : id,
+          model: d.model || '',
+        }))
+    } catch (e) { /* ignore parse errors */ }
+
     try {
       const res = await fetch('/api/recipes/generate', {
         method: 'POST',
@@ -72,6 +84,7 @@ export default function ListPage() {
             name: i.name,
             expiresIn: getStatus(i).daysLeft,
           })),
+          appliances,
         }),
       })
 
