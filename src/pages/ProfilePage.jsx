@@ -1,5 +1,8 @@
 import { useState } from 'react'
 import useLocalStorage from '../hooks/useLocalStorage'
+import useMealNotifications from '../hooks/useMealNotifications'
+import useCardRanking from '../hooks/useCardRanking'
+import meals from '../data/meals'
 
 const APPLIANCE_TEMPLATES = [
   { id: 'blender', name: 'Blender', icon: 'blender', hint: 'e.g. Vitamix 750, NutriBullet Pro' },
@@ -39,6 +42,11 @@ export default function ProfilePage({ onClose }) {
   const [showAddCustom, setShowAddCustom] = useState(false)
   const [customName, setCustomName] = useState('')
   const [customModel, setCustomModel] = useState('')
+  const notifications = useMealNotifications()
+  const ranking = useCardRanking()
+
+  // Get discarded meals
+  const discardedMeals = meals.filter(m => ranking.isDiscarded(m.id))
 
   const toggleAppliance = (id) => {
     setApplianceData(prev => {
@@ -376,6 +384,128 @@ export default function ProfilePage({ onClose }) {
                       </div>
                     )
                   })}
+              </div>
+            </div>
+          )}
+
+          {/* ===== NOTIFICATIONS SECTION ===== */}
+          <div style={{ marginTop: '24px', marginBottom: '24px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
+              <span className="material-symbols-outlined" style={{ color: '#4f645b', fontSize: '20px' }}>notifications</span>
+              <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 700, color: '#2f332f' }}>Meal Reminders</h3>
+            </div>
+            <p style={{ margin: '0 0 16px', fontSize: '13px', color: '#787c77', lineHeight: 1.5 }}>
+              Get notified when it's time to eat. Reminders fire at each scheduled meal time.
+            </p>
+            <div
+              onClick={async () => {
+                if (notifications.enabled) {
+                  notifications.disable()
+                } else {
+                  await notifications.requestPermission()
+                }
+              }}
+              style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                padding: '16px 20px', borderRadius: '16px',
+                background: notifications.enabled ? '#d1e8dd' : '#f3f4ef',
+                border: notifications.enabled ? '2px solid #4f645b' : '2px solid transparent',
+                cursor: 'pointer', transition: 'all 0.2s ease',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <span className="material-symbols-outlined" style={{
+                  fontSize: '22px',
+                  color: notifications.enabled ? '#4f645b' : '#787c77',
+                  fontVariationSettings: notifications.enabled ? "'FILL' 1" : "'FILL' 0",
+                }}>notifications_active</span>
+                <div>
+                  <span style={{
+                    fontSize: '14px', fontWeight: 700,
+                    color: notifications.enabled ? '#42564e' : '#5f5f5c',
+                  }}>{notifications.enabled ? 'Reminders On' : 'Enable Reminders'}</span>
+                  <span style={{
+                    display: 'block', fontSize: '11px',
+                    color: notifications.enabled ? '#43574f' : '#afb3ad',
+                  }}>
+                    {notifications.permissionState === 'denied'
+                      ? 'Blocked — allow in browser settings'
+                      : notifications.enabled
+                        ? '8am · 1pm · 4pm · 7pm · 10pm'
+                        : 'Browser notifications at meal times'}
+                  </span>
+                </div>
+              </div>
+              {/* Toggle pill */}
+              <div style={{
+                width: '44px', height: '26px', borderRadius: '13px',
+                background: notifications.enabled ? '#4f645b' : '#afb3ad',
+                position: 'relative', transition: 'background 0.3s ease',
+              }}>
+                <div style={{
+                  width: '20px', height: '20px', borderRadius: '50%',
+                  background: '#fff', position: 'absolute', top: '3px',
+                  left: notifications.enabled ? '21px' : '3px',
+                  transition: 'left 0.3s ease',
+                  boxShadow: '0 1px 3px rgba(0,0,0,0.2)',
+                }} />
+              </div>
+            </div>
+          </div>
+
+          {/* ===== DISCARDED CARDS SECTION ===== */}
+          {discardedMeals.length > 0 && (
+            <div style={{ marginBottom: '24px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
+                <span className="material-symbols-outlined" style={{ color: '#a73b21', fontSize: '20px' }}>delete_sweep</span>
+                <h3 style={{ margin: 0, fontSize: '16px', fontWeight: 700, color: '#2f332f' }}>Discarded Meals</h3>
+                <span style={{
+                  marginLeft: 'auto', padding: '3px 10px', borderRadius: '9999px',
+                  fontSize: '11px', fontWeight: 700, background: '#f5e6e1', color: '#a73b21',
+                }}>{discardedMeals.length}</span>
+              </div>
+              <p style={{ margin: '0 0 16px', fontSize: '13px', color: '#787c77', lineHeight: 1.5 }}>
+                Meals you've swiped away too many times. Restore them or delete permanently.
+              </p>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                {discardedMeals.map(meal => (
+                  <div key={meal.id} style={{
+                    display: 'flex', alignItems: 'center', gap: '12px',
+                    padding: '12px 16px', borderRadius: '14px',
+                    background: '#fdf5f3', border: '1px solid rgba(167,59,33,0.1)',
+                  }}>
+                    <img src={meal.image} alt={meal.name} style={{
+                      width: '44px', height: '44px', borderRadius: '10px', objectFit: 'cover',
+                    }} />
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <span style={{ fontSize: '14px', fontWeight: 700, color: '#2f332f', display: 'block' }}>
+                        {meal.name}
+                      </span>
+                      <span style={{ fontSize: '11px', color: '#a73b21', fontWeight: 600 }}>
+                        Score: {ranking.getScore(meal.id)}
+                      </span>
+                    </div>
+                    <button
+                      onClick={() => ranking.restoreCard(meal.id)}
+                      style={{
+                        padding: '8px 14px', borderRadius: '10px', border: 'none',
+                        background: '#d1e8dd', color: '#42564e',
+                        fontFamily: "'Manrope', sans-serif", fontWeight: 700,
+                        fontSize: '11px', cursor: 'pointer',
+                      }}
+                    >Restore</button>
+                    <button
+                      onClick={() => ranking.deleteCard(meal.id)}
+                      style={{
+                        padding: '8px', borderRadius: '10px', border: 'none',
+                        background: 'transparent', color: '#a73b21',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>delete</span>
+                    </button>
+                  </div>
+                ))}
               </div>
             </div>
           )}

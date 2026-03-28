@@ -457,6 +457,44 @@ export default function ListPage() {
             ))}
           </div>
 
+          {/* ===== DELIVERY BUTTONS ===== */}
+          <div style={{ display: 'flex', gap: '10px' }}>
+            <button
+              onClick={() => {
+                const unchecked = storeItems.filter(g => !checkedGroceries[g.id])
+                const query = unchecked.map(g => g.name).join(', ')
+                window.open(`https://www.instacart.com/store/search_v3/search?search_term=${encodeURIComponent(query)}`, '_blank')
+              }}
+              style={{
+                flex: 1, padding: '14px 20px', borderRadius: '16px', border: 'none',
+                background: '#0aaf51', color: '#ffffff',
+                fontFamily: "'Manrope', sans-serif", fontWeight: 700, fontSize: '13px',
+                cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+                transition: 'all 0.2s ease',
+              }}
+            >
+              <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>local_shipping</span>
+              Shop on Instacart
+            </button>
+            <button
+              onClick={() => {
+                const unchecked = storeItems.filter(g => !checkedGroceries[g.id])
+                const query = unchecked.map(g => g.name).join(' ')
+                window.open(`https://www.amazon.com/s?k=${encodeURIComponent(query)}&i=amazonfresh`, '_blank')
+              }}
+              style={{
+                flex: 1, padding: '14px 20px', borderRadius: '16px', border: 'none',
+                background: '#ff9900', color: '#111',
+                fontFamily: "'Manrope', sans-serif", fontWeight: 700, fontSize: '13px',
+                cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+                transition: 'all 0.2s ease',
+              }}
+            >
+              <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>shopping_bag</span>
+              Amazon Fresh
+            </button>
+          </div>
+
           {/* Progress */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             <div style={{ flex: 1, height: '8px', background: '#e6e9e3', borderRadius: '9999px', overflow: 'hidden' }}>

@@ -53,10 +53,31 @@ export default function useCardRanking() {
     return { label: 'Discarded', color: '#787c77' }
   }, [scores])
 
-  // Filter and sort a pool of meals: remove discarded, sort by score (favorites first)
+  // Restore a discarded card back to neutral (score = 0)
+  const restoreCard = useCallback((id) => {
+    setScores(prev => ({ ...prev, [id]: 0 }))
+  }, [setScores])
+
+  // Permanently delete a card from the ranking system
+  const deleteCard = useCallback((id) => {
+    setScores(prev => {
+      const next = { ...prev }
+      delete next[id]
+      // Mark as permanently deleted with a special sentinel
+      next[`__deleted__${id}`] = true
+      return next
+    })
+  }, [setScores])
+
+  // Check if permanently deleted
+  const isPermanentlyDeleted = useCallback((id) => {
+    return !!scores[`__deleted__${id}`]
+  }, [scores])
+
+  // Filter and sort a pool of meals: remove discarded + permanently deleted, sort by score (favorites first)
   // Then add randomness via day-of-year seeded shuffle within tiers
   const rankPool = useCallback((pool) => {
-    const available = pool.filter(m => !isDiscarded(m.id))
+    const available = pool.filter(m => !isDiscarded(m.id) && !isPermanentlyDeleted(m.id))
     // Sort descending by score, with a day-based offset for variety
     const dayOffset = new Date().getDay()
     return available.sort((a, b) => {
@@ -66,16 +87,19 @@ export default function useCardRanking() {
       // Same score: rotate based on day for variety
       return ((a.id.charCodeAt(0) + dayOffset) % 3) - ((b.id.charCodeAt(0) + dayOffset) % 3)
     })
-  }, [scores, isDiscarded])
+  }, [scores, isDiscarded, isPermanentlyDeleted])
 
   return {
     getScore,
     recordSwap,
     recordChoose,
     isDiscarded,
+    isPermanentlyDeleted,
     getSwapsUsed,
     getTier,
     rankPool,
+    restoreCard,
+    deleteCard,
     scores,
     DISCARD_THRESHOLD,
   }
