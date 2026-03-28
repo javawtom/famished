@@ -201,7 +201,7 @@ export default function FuelPage() {
               {isLiked(healthyOption.id) && (
                 <div style={{
                   position: 'absolute', top: '10px', right: '10px',
-                  width: '30px', height: '30px', borderRadius: '10px',
+                  width: '27.5px', height: '27.5px', borderRadius: '10px',
                   background: 'rgba(255,255,255,0.85)',
                   backdropFilter: 'blur(6px)',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -316,7 +316,7 @@ export default function FuelPage() {
               {isLiked(quickOption.id) && (
                 <div style={{
                   position: 'absolute', top: '10px', right: '10px',
-                  width: '30px', height: '30px', borderRadius: '10px',
+                  width: '27.5px', height: '27.5px', borderRadius: '10px',
                   background: 'rgba(255,255,255,0.85)',
                   backdropFilter: 'blur(6px)',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',

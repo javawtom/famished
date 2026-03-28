@@ -7,7 +7,7 @@ export default function handler(req, res) {
     + '?response_type=code'
     + '&client_id=' + CLIENT_ID
     + '&redirect_uri=' + encodeURIComponent(REDIRECT_URI)
-    + '&scope=user.metrics'
+    + '&scope=user.metrics,user.activity'
     + '&state=famished-auth'
 
   res.redirect(302, authUrl)
