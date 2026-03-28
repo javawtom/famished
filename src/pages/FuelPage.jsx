@@ -99,18 +99,10 @@ export default function FuelPage() {
     : mealPeriod.mealType === 'snack' ? 'a snack'
     : mealPeriod.label.toLowerCase()
 
-  // Render a card tier badge if the meal has a tier
-  const renderTierBadge = (mealId) => {
+  // Check if meal has been liked (tier score >= 2)
+  const isLiked = (mealId) => {
     const tier = ranking.getTier(mealId)
-    if (!tier) return null
-    return (
-      <span style={{
-        display: 'inline-block', padding: '2px 8px', borderRadius: '9999px',
-        fontSize: '9px', fontWeight: 700, letterSpacing: '0.06em',
-        background: `${tier.color}15`, color: tier.color,
-        marginLeft: '6px',
-      }}>{tier.label}</span>
-    )
+    return tier && tier.label !== 'New'
   }
 
   return (
@@ -198,6 +190,7 @@ export default function FuelPage() {
             <div style={{
               width: '100%', aspectRatio: '1/1', borderRadius: '1rem',
               overflow: 'hidden', marginBottom: '14px', background: '#f3f4ef',
+              position: 'relative',
             }}>
               <img
                 src={healthyOption.image}
@@ -205,6 +198,14 @@ export default function FuelPage() {
                 style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                 loading="lazy"
               />
+              {isLiked(healthyOption.id) && (
+                <span className="material-symbols-outlined" style={{
+                  position: 'absolute', top: '10px', right: '10px',
+                  fontSize: '22px', color: '#e74c3c',
+                  fontVariationSettings: "'FILL' 1",
+                  filter: 'drop-shadow(0 1px 3px rgba(0,0,0,0.3))',
+                }}>favorite</span>
+              )}
             </div>
             <div style={{ padding: '0 4px' }}>
               <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', marginBottom: '6px' }}>
@@ -214,7 +215,7 @@ export default function FuelPage() {
                   letterSpacing: '0.08em',
                   background: 'rgba(79, 100, 91, 0.1)', color: '#4f645b',
                 }}>Healthy</span>
-                {renderTierBadge(healthyOption.id)}
+
               </div>
               <h3 style={{
                 fontSize: '17px', fontWeight: 700, color: '#2f332f',
@@ -297,6 +298,7 @@ export default function FuelPage() {
             <div style={{
               width: '100%', aspectRatio: '1/1', borderRadius: '1rem',
               overflow: 'hidden', marginBottom: '14px', background: '#f3f4ef',
+              position: 'relative',
             }}>
               <img
                 src={quickOption.image}
@@ -304,6 +306,14 @@ export default function FuelPage() {
                 style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                 loading="lazy"
               />
+              {isLiked(quickOption.id) && (
+                <span className="material-symbols-outlined" style={{
+                  position: 'absolute', top: '10px', right: '10px',
+                  fontSize: '22px', color: '#e74c3c',
+                  fontVariationSettings: "'FILL' 1",
+                  filter: 'drop-shadow(0 1px 3px rgba(0,0,0,0.3))',
+                }}>favorite</span>
+              )}
             </div>
             <div style={{ padding: '0 4px' }}>
               <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', marginBottom: '6px' }}>
@@ -313,7 +323,7 @@ export default function FuelPage() {
                   letterSpacing: '0.08em',
                   background: 'rgba(105, 93, 82, 0.1)', color: '#695d52',
                 }}>Quick</span>
-                {renderTierBadge(quickOption.id)}
+
               </div>
               <h3 style={{
                 fontSize: '17px', fontWeight: 700, color: '#2f332f',

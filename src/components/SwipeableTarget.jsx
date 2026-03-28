@@ -27,7 +27,7 @@ export default function SwipeableTarget({
 
   const handleMove = useCallback((clientX) => {
     if (!isDragging) return
-    const deltaX = startXRef.current - clientX // left = increase
+    const deltaX = clientX - startXRef.current // right = increase, left = decrease
     const deltaValue = Math.round(deltaX * step)
     const newValue = Math.max(min, Math.min(max, startValueRef.current + deltaValue))
     onChange(newValue)
