@@ -1,0 +1,24 @@
+{
+  "name": "Fuel Now",
+  "short_name": "Fuel Now",
+  "description": "Zero-friction nourishment to help you gain weight and build healthy eating routines.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#f3f4ef",
+  "theme_color": "#4f645b",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

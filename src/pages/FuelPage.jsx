@@ -1,15 +1,32 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { useApp } from '../context/AppContext'
 import { getCurrentMealPeriod } from '../data/schedule'
 import { getHealthyMeals, getQuickMeals } from '../data/meals'
 import useCardRanking from '../hooks/useCardRanking'
+import Confetti from '../components/Confetti'
+
+const STREAK_MILESTONES = [3, 7, 14, 30, 60, 100]
+const STREAK_BADGES = {
+  3: { emoji: '🔥', label: '3-Day Spark' },
+  7: { emoji: '⚡', label: '7-Day Streak' },
+  14: { emoji: '💪', label: '2-Week Warrior' },
+  30: { emoji: '🏆', label: '30-Day Champion' },
+  60: { emoji: '👑', label: '60-Day Legend' },
+  100: { emoji: '💎', label: '100-Day Diamond' },
+}
 
 const MAX_SWAPS = 3
 
 export default function FuelPage() {
-  const { markEaten, unmarkEaten, isMealEaten } = useApp()
+  const { markEaten, unmarkEaten, isMealEaten, streakDays } = useApp()
   const mealPeriod = getCurrentMealPeriod()
   const ranking = useCardRanking()
+  const [showConfetti, setShowConfetti] = useState(false)
+  const [streakBadge, setStreakBadge] = useState(null)
+
+  // Check for streak milestone when streak changes
+  const currentBadge = STREAK_MILESTONES.filter(m => streakDays >= m).pop()
+  const badgeInfo = currentBadge ? STREAK_BADGES[currentBadge] : null
 
   // Get all healthy and quick meals for current meal type
   const mealType = mealPeriod.mealType === 'snack' || mealPeriod.mealType === 'latenight'
@@ -48,6 +65,14 @@ export default function FuelPage() {
       setChosenMeal(side)
       setJustAte(true)
       setTimeout(() => setJustAte(false), 2000)
+
+      // Check if this eat triggers a streak milestone
+      const nextStreak = streakDays + 1 // Approximate (actual recalculates)
+      if (STREAK_MILESTONES.includes(nextStreak)) {
+        setShowConfetti(true)
+        setStreakBadge(STREAK_BADGES[nextStreak])
+        setTimeout(() => { setShowConfetti(false); setStreakBadge(null) }, 4000)
+      }
     }
   }
 
@@ -90,6 +115,30 @@ export default function FuelPage() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
+      {/* ===== CONFETTI OVERLAY ===== */}
+      <Confetti trigger={showConfetti} />
+
+      {/* ===== STREAK MILESTONE POPUP ===== */}
+      {streakBadge && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          zIndex: 9998, pointerEvents: 'none',
+        }}>
+          <div style={{
+            background: 'rgba(47,51,47,0.9)', backdropFilter: 'blur(12px)',
+            padding: '28px 40px', borderRadius: '24px', textAlign: 'center',
+            animation: 'popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
+          }}>
+            <span style={{ fontSize: '48px', display: 'block', marginBottom: '8px' }}>{streakBadge.emoji}</span>
+            <span style={{ fontSize: '18px', fontWeight: 700, color: '#fff', display: 'block' }}>{streakBadge.label}</span>
+            <span style={{ fontSize: '12px', color: '#afb3ad', display: 'block', marginTop: '4px' }}>
+              {streakDays + 1}-day streak!
+            </span>
+          </div>
+        </div>
+      )}
+
       {/* ===== DECISION HEADLINE ===== */}
       <section style={{ textAlign: 'center' }}>
         <h2 style={{
@@ -99,6 +148,19 @@ export default function FuelPage() {
         <p style={{ color: '#5f5f5c', fontSize: '17px', lineHeight: 1.6 }}>
           It's time for {mealLabel}. Choose what feels right.
         </p>
+        {/* Streak badge */}
+        {badgeInfo && (
+          <div style={{
+            display: 'inline-flex', alignItems: 'center', gap: '6px',
+            marginTop: '12px', padding: '6px 16px', borderRadius: '9999px',
+            background: '#d1e8dd', color: '#42564e',
+            fontSize: '13px', fontWeight: 700,
+          }}>
+            <span>{badgeInfo.emoji}</span>
+            <span>{badgeInfo.label}</span>
+            <span style={{ color: '#787c77', fontWeight: 500 }}>· Day {streakDays}</span>
+          </div>
+        )}
       </section>
 
       {/* ===== SWAP COUNTER ===== */}

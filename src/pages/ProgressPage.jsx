@@ -214,7 +214,8 @@ export default function ProgressPage() {
             {/* Gradient fill under line */}
             <defs>
               <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#4f645b" stopOpacity="0.15" />
+                <stop offset="0%" stopColor="#4f645b" stopOpacity="0.35" />
+                <stop offset="60%" stopColor="#4f645b" stopOpacity="0.12" />
                 <stop offset="100%" stopColor="#4f645b" stopOpacity="0.02" />
               </linearGradient>
             </defs>
