@@ -46,7 +46,7 @@ Return EXACTLY this JSON format (no markdown, no code blocks):
 
   try {
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -54,7 +54,7 @@ Return EXACTLY this JSON format (no markdown, no code blocks):
           contents: [{ parts: [{ text: prompt }] }],
           generationConfig: {
             temperature: 0.7,
-            maxOutputTokens: 2048,
+            maxOutputTokens: 8192,
           },
         }),
       }
@@ -66,11 +66,17 @@ Return EXACTLY this JSON format (no markdown, no code blocks):
     }
 
     const data = await response.json()
-    const text = data.candidates?.[0]?.content?.parts?.[0]?.text || ''
+    // Gemini 2.5 thinking models return multiple parts (thought + text)
+    const parts = data.candidates?.[0]?.content?.parts || []
+    const rawText = parts.map(p => p.text || '').join('')
 
-    // Parse JSON from response (strip markdown code blocks if present)
-    const jsonMatch = text.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim()
-    const parsed = JSON.parse(jsonMatch)
+    const firstBrace = rawText.indexOf('{')
+    const lastBrace = rawText.lastIndexOf('}')
+    if (firstBrace === -1 || lastBrace === -1) {
+      return res.status(500).json({ error: 'No JSON found in AI response' })
+    }
+    const jsonStr = rawText.slice(firstBrace, lastBrace + 1)
+    const parsed = JSON.parse(jsonStr)
 
     return res.status(200).json(parsed)
   } catch (err) {
