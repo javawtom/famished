@@ -6,6 +6,7 @@ import ListPage from './pages/ListPage'
 import RecipesPage from './pages/RecipesPage'
 import ProgressPage from './pages/ProgressPage'
 import LibraryPage from './pages/LibraryPage'
+import TestLibraryPage from './pages/TestLibraryPage'
 
 export default function App() {
   return (
@@ -18,6 +19,7 @@ export default function App() {
             <Route path="/recipes" element={<RecipesPage />} />
             <Route path="/progress" element={<ProgressPage />} />
             <Route path="/library" element={<LibraryPage />} />
+            <Route path="/test-library" element={<TestLibraryPage />} />
           </Route>
         </Routes>
       </AppProvider>

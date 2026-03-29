@@ -8,6 +8,7 @@ const navItems = [
   { path: '/recipes',  icon: 'restaurant_menu',  label: 'Recipes'  },
   { path: '/progress', icon: 'trending_up',      label: 'Progress' },
   { path: '/library',  icon: 'local_library',    label: 'Library'  },
+  { path: '/test-library', icon: 'menu_book',    label: 'Test'     },
 ]
 
 export default function AppShell() {
